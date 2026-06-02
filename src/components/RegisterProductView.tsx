@@ -5,17 +5,17 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Save, 
-  ChevronRight, 
-  Image as ImageIcon, 
-  Lightbulb, 
-  CheckCircle,
-  HelpCircle,
-  Undo2
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Save,
+  ChevronRight,
+  Image as ImageIcon,
+  Lightbulb,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { Product, Category } from '../types';
+import { api } from '../lib/api';
 
 interface RegisterProductViewProps {
   categories: Category[];
@@ -41,6 +41,29 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
   const [image, setImage] = useState('');
 
   const [savingStatus, setSavingStatus] = useState<idle | saving | success | error>('idle');
+
+  // Image upload (POST /api/upload)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { url } = await api.uploadImage(file);
+      if (url) setImage(url);
+      else setUploadError('Upload succeeded but no URL was returned.');
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setUploading(false);
+      // reset so selecting the same file again still triggers change
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Load editing product factors if in edit mode
   useEffect(() => {
@@ -191,10 +214,44 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
 
             {/* Predefined visual options select */}
             <div className="space-y-3">
-              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Set Menu Photo</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Set Menu Photo</label>
+
+                {/* Upload your own image */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary-container disabled:opacity-50 cursor-pointer transition-colors"
+                >
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? 'Uploading…' : 'Upload image'}
+                </button>
+              </div>
+
+              {uploadError && (
+                <p className="text-[11px] font-semibold text-red-600">{uploadError}</p>
+              )}
+
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {/* Show the uploaded image as a selectable tile if it isn't one of the presets */}
+                {image && !PRESET_PRODUCT_PHOTOS.some(p => p.url === image) && (
+                  <div className="relative rounded-xl overflow-hidden h-16 border-2 border-primary ring-1 ring-primary shadow-sm scale-[0.98]">
+                    <img src={image} alt="Uploaded" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-1">
+                      <span className="text-[8px] font-bold text-white text-center leading-none">Uploaded</span>
+                    </div>
+                  </div>
+                )}
                 {PRESET_PRODUCT_PHOTOS.map((photo, i) => (
-                  <button 
+                  <button
                     key={i}
                     type="button"
                     onClick={() => setImage(photo.url)}

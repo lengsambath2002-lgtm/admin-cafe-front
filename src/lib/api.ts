@@ -194,4 +194,27 @@ export const api = {
     a.remove();
     URL.revokeObjectURL(url);
   },
+
+  // Uploads an image via multipart/form-data (POST /api/upload).
+  // Do NOT set Content-Type — the browser must add the multipart boundary.
+  // Returns the absolute asset URL plus the raw server payload.
+  async uploadImage(file: File): Promise<{ url: string; filename?: string; raw: Record<string, string> }> {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: form });
+    if (!res.ok) {
+      throw new Error(`Upload failed (${res.status})`);
+    }
+    const raw = (await res.json()) as Record<string, string>;
+    // The response is a string map; tolerate common key names from the backend.
+    const candidate = raw.url ?? raw.path ?? raw.location ?? raw.filename ?? Object.values(raw)[0] ?? '';
+    const url = candidate && !/^https?:\/\//i.test(candidate)
+      ? `${BASE_URL}${candidate.startsWith('/') ? '' : '/'}${candidate}`
+      : candidate;
+    return { url, filename: raw.filename, raw };
+  },
+
+  // Removes a previously uploaded file (DELETE /api/upload/{filename}).
+  deleteUpload: (filename: string) =>
+    request<Record<string, unknown>>(`/api/upload/${encodeURIComponent(filename)}`, { method: 'DELETE' }),
 };

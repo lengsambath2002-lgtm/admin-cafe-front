@@ -1,0 +1,300 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+'use client';
+
+import { useState } from 'react';
+import { 
+  Search, 
+  Grid3X3, 
+  List, 
+  Edit3, 
+  Plus, 
+  AlertTriangle,
+  RotateCw,
+  Trash2
+} from 'lucide-react';
+import { Product, Category } from '../types';
+
+interface ProductsViewProps {
+  products: Product[];
+  categories: Category[];
+  onNavigate: (tab: string) => void;
+  onEditProduct: (product: Product) => void;
+  onDeleteProduct: (productId: string) => void;
+}
+
+export default function ProductsView({ products, categories, onNavigate, onEditProduct, onDeleteProduct }: ProductsViewProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Category name or Id mapper
+  const getCategoryLabel = (catId: string) => {
+    return categories.find(c => c.id === catId)?.name || catId;
+  };
+
+  // Live filter catalog lists
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesCategory = 
+      selectedCategory === 'All' || 
+      p.category === selectedCategory || 
+      p.category.toLowerCase() === selectedCategory.toLowerCase().replace(' ', '_');
+
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Search and Filters Segment */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div>
+          <h2 className="text-3xl font-bold text-primary tracking-tight">Product Catalog</h2>
+          <p className="text-secondary text-base mt-1">Manage your menu offerings, edit prices and monitor inventory levels.</p>
+        </div>
+
+        {/* Catalog layout togglers + Trigger buttons */}
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+          <div className="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant/35 shrink-0">
+            <button 
+              onClick={() => setViewStyle('grid')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+              title="Grid Layout"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => setViewStyle('list')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'list' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+              title="List Density Layout"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          <button 
+            onClick={() => onNavigate('register_product')}
+            className="bg-primary text-on-primary hover:bg-primary-container px-5 h-11 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4.5 h-4.5 text-on-primary" />
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      {/* Filter and search controls row */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+        {/* Chips filters */}
+        <div className="flex gap-2.5 flex-wrap">
+          <button 
+            onClick={() => setSelectedCategory('All')}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button 
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${selectedCategory === cat.name ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Input bar */}
+        <div className="relative w-full md:w-80">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
+            <Search className="w-4 h-4" />
+          </span>
+          <input 
+            type="text" 
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface-container-low text-xs px-4 py-2.5 pl-9 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+          />
+        </div>
+      </div>
+
+      {/* Render Product views based on layouts selection */}
+      {viewStyle === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {filteredProducts.map((product) => {
+            const isOutOfStock = product.stock <= 0;
+            return (
+              <div 
+                key={product.id}
+                className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/25 overflow-hidden shadow-bento hover:shadow-bento-raised transition-all duration-300 relative flex flex-col justify-between"
+              >
+                {/* Media frame */}
+                <div className="h-52 overflow-hidden relative">
+                  <img 
+                    src={product.imageUrl || product.image} 
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    referrerPolicy="no-referrer"
+                  />
+                  {/* Category tag */}
+                  <div className="absolute top-3.5 right-3.5">
+                    <span className="bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1 rounded-full text-primary font-bold text-[10px] uppercase tracking-wider shadow-sm border border-outline-variant/15">
+                      {getCategoryLabel(product.category)}
+                    </span>
+                  </div>
+
+                  {/* Glassmorphic out-of-stock overlay (Screen 6 visual) */}
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center animate-fade-in">
+                      <span className="bg-error text-on-error px-4 py-2 rounded-xl font-bold text-xs tracking-wider shadow-lg transform scale-100 hover:scale-102 transition-transform">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info and action panel */}
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1.5 text-left mb-6">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-bold text-lg text-primary leading-tight group-hover:text-primary-container transition-colors">
+                        {product.name}
+                      </h3>
+                      <span className="font-extrabold text-secondary shrink-0 text-base">
+                        ${product.price.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                      {product.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4 mt-auto">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${
+                        isOutOfStock
+                          ? 'bg-red-500 animate-pulse'
+                          : product.stock < 15
+                            ? 'bg-amber-500'
+                            : 'bg-green-500'
+                      }`} />
+                      <span className="text-xs font-semibold text-on-surface-variant">
+                        {isOutOfStock ? '0 in stock' : `${product.stock} in stock`}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => onEditProduct(product)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary-container/60 transition-colors text-primary cursor-pointer"
+                        title="Edit Product"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => onDeleteProduct(product.id)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-200 transition-colors text-neutral-500 hover:text-neutral-900 cursor-pointer"
+                        title="Delete Product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Dotted Add New Item shortcut (Screen 6) */}
+          <button 
+            onClick={() => onNavigate('register_product')}
+            className="group border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary hover:bg-primary/5 transition-all duration-300 min-h-[350px] cursor-pointer"
+          >
+            <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform group-hover:bg-primary-container">
+              <Plus className="w-6 h-6 text-primary group-hover:text-on-primary animate-pulse" />
+            </div>
+            <p className="font-bold text-lg text-primary tracking-tight">Add New Item</p>
+            <p className="text-xs text-on-surface-variant mt-2 max-w-[200px] text-center">Create a new premium catalog listing for your menu.</p>
+          </button>
+        </div>
+      ) : (
+        /* List Layout Option */
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/25 overflow-hidden shadow-bento">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-surface-container-low/50 border-b border-outline-variant/35">
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Product</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Category</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Price</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-center">Stock</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/15">
+              {filteredProducts.map((product) => {
+                const isOutOfStock = product.stock <= 0;
+                return (
+                  <tr key={product.id} className="hover:bg-surface-container-low/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={product.imageUrl || product.image} 
+                          alt={product.name}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0 border border-outline-variant/20"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div>
+                          <p className="text-sm font-bold text-primary">{product.name}</p>
+                          <p className="text-xs text-on-surface-variant/80 line-clamp-1 max-w-sm">{product.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-semibold text-on-surface-variant font-mono">
+                        {getCategoryLabel(product.category)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-sm font-bold text-primary">${product.price.toFixed(2)}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="inline-flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <span className="text-xs font-bold text-on-surface-variant">
+                          {isOutOfStock ? 'Out of stock' : `${product.stock} units`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <button 
+                          onClick={() => onEditProduct(product)}
+                          className="w-8 h-8 rounded-full hover:bg-secondary-container-high flex items-center justify-center text-primary cursor-pointer border border-outline-variant/10"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => onDeleteProduct(product.id)}
+                          className="w-8 h-8 rounded-full hover:bg-neutral-200 flex items-center justify-center text-neutral-500 hover:text-neutral-900 cursor-pointer border border-outline-variant/10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

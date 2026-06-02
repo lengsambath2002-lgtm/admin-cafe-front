@@ -37,3 +37,4 @@ src/
   types.ts        # Shared TypeScript types
 ```
 # admin-cafe-front
+# admin-cafe-front

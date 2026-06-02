@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-sans: "DM Sans", "Inter", sans-serif;
+
+  /* Monochrome grayscale palette — no hue anywhere */
+  --color-primary: #1a1a1a;
+  --color-primary-container: #333333;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #cccccc;
+  --color-secondary: #525252;
+  --color-secondary-container: #e8e8e8;
+  --color-secondary-container-high: #dcdcdc;
+  --color-tertiary: #262626;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #d4d4d4;
+  --color-on-tertiary-container: #f5f5f5;
+  --color-background: #fafafa;
+  --color-surface: #fafafa;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f5f5;
+  --color-surface-container: #ededed;
+  --color-surface-container-high: #e5e5e5;
+  --color-surface-container-highest: #dcdcdc;
+  --color-on-surface: #1a1a1a;
+  --color-on-surface-variant: #525252;
+  --color-outline-variant: #d4d4d4;
+  --color-error: #404040;
+  --color-on-error: #ffffff;
+
+  --shadow-bento: 0px 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-bento-raised: 0px 8px 24px rgba(0, 0, 0, 0.10);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Custom scrollbars matching the craft theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c4c4c4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #808080;
+}
+
+/* Safe Area Paddings */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}

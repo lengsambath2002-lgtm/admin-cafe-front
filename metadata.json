@@ -1,0 +1,6 @@
+{
+  "name": "Brewmaster Admin",
+  "description": "A premium cafe management dashboard for processing incoming orders, managing menu categories and products, and analyzing daily sales trends.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

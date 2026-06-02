@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Coffee,
   LayoutDashboard,
@@ -22,12 +22,7 @@ import {
 } from 'lucide-react';
 
 import { Category, Product, Order, Transaction } from '../types';
-import {
-  INITIAL_CATEGORIES,
-  INITIAL_PRODUCTS,
-  INITIAL_ORDERS,
-  INITIAL_TRANSACTIONS
-} from '../data';
+import { api } from '../lib/api';
 
 import DashboardView from '../components/DashboardView';
 import OrdersView from '../components/OrdersView';
@@ -40,12 +35,45 @@ import TakeOrderModal, { PlaceOrderPayload } from '../components/TakeOrderModal'
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // High availability memory reactive states
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  // Backend-backed reactive states (hydrated from the API on mount)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Initial data load lifecycle
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Hydrate all collections from the backend once on mount
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+        const [cats, prods, ords, txs] = await Promise.all([
+          api.listCategories(),
+          api.listProducts(),
+          api.listOrders(),
+          api.listTransactions()
+        ]);
+        if (!active) return;
+        setCategories(cats);
+        setProducts(prods);
+        setOrders(ords);
+        setTransactions(txs);
+      } catch (err) {
+        if (active) setLoadError(err instanceof Error ? err.message : 'Failed to load data from the server.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Search in global bar if focused
   const [globalSearch, setGlobalSearch] = useState('');
@@ -56,96 +84,88 @@ export default function App() {
   // Take-order ticket modal (admin builds the customer's order)
   const [takeOrderOpen, setTakeOrderOpen] = useState(false);
 
-  // order lifecycles transitional triggers
-  const handleOrderUpdate = (orderId: string, status: Order['status']) => {
-    setOrders(prev => prev.map(order => {
-      if (order.id === orderId) {
-        let elapsed = order.timeElapsed;
-        if (status === 'Preparing') elapsed = 'Started prep';
-        if (status === 'Ready') elapsed = 'Ready for pickup';
-        if (status === 'Completed') elapsed = 'Completed just now';
-
-        // Add transaction entry state if completed to demonstrate complete structural cohesion
-        if (status === 'Completed' && order.status !== 'Completed') {
-          const newTx: Transaction = {
-            id: `BW-9${Math.floor(100 + Math.random() * 900)}`,
-            customerName: order.tableNumber || 'Anonymous Table',
-            description: order.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
-            timestamp: 'Just now',
-            itemsCount: order.items.reduce((acc, current) => acc + current.quantity, 0),
-            amount: order.total,
-            status: 'COMPLETED'
-          };
-          setTransactions(tPrev => [newTx, ...tPrev]);
-        }
-
-        return {
-          ...order,
-          status,
-          timeElapsed: elapsed
-        };
+  // order lifecycles transitional triggers — PATCH /api/orders/{id}/status
+  const handleOrderUpdate = async (orderId: string, status: Order['status']) => {
+    try {
+      const { order, transaction } = await api.updateOrderStatus(orderId, status);
+      setOrders(prev => prev.map(o => (o.id === orderId ? order : o)));
+      // Backend emits a transaction when an order completes — surface it immediately.
+      if (transaction) {
+        setTransactions(prev => [transaction, ...prev]);
       }
-      return order;
-    }));
-  };
-
-  // adding categories
-  const handleAddCategory = (newCat: { name: string; image: string }) => {
-    const freshCat: Category = {
-      id: newCat.name.toLowerCase().replace(/\s+/g, '_'),
-      name: newCat.name,
-      itemsCount: 0,
-      image: newCat.image,
-      icon: 'Coffee'
-    };
-    setCategories(prev => [...prev, freshCat]);
-  };
-
-  // deleting categories
-  const handleDeleteCategory = (catId: string) => {
-    setCategories(prev => prev.filter(c => c.id !== catId));
-  };
-
-  // CRUD submits for menu products
-  const handleProductSubmit = (productData: Partial<Product>) => {
-    if (productData.id) {
-      // Edit Mode
-      setProducts(prev => prev.map(p => {
-        if (p.id === productData.id) {
-          return { ...p, ...productData } as Product;
-        }
-        return p;
-      }));
-    } else {
-      // Create Mode
-      const nextId = `p${products.length + 1}`;
-      const newProduct: Product = {
-        id: nextId,
-        name: productData.name || 'New Product',
-        category: productData.category || 'espresso',
-        price: productData.price || 0,
-        stock: productData.stock || 0,
-        description: productData.description || '',
-        image: productData.image || ''
-      };
-      setProducts(prev => [newProduct, ...prev]);
-
-      // dynamically add categories items count calculation to reflect dynamic stats
-      setCategories(prev => prev.map(c => {
-        if (c.id === productData.category || c.name.toLowerCase() === productData.category?.toLowerCase()) {
-          return { ...c, itemsCount: c.itemsCount + 1 };
-        }
-        return c;
-      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update order status.');
     }
-
-    setEditingProduct(null);
-    setActiveTab('products');
   };
 
-  // Delete product
-  const handleDeleteProduct = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+  // adding categories — POST /api/categories
+  const handleAddCategory = async (newCat: { name: string; image: string }) => {
+    try {
+      const created = await api.createCategory({ name: newCat.name, image: newCat.image });
+      setCategories(prev => [...prev, created]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to add category.');
+    }
+  };
+
+  // deleting categories — DELETE /api/categories/{id}
+  const handleDeleteCategory = async (catId: string) => {
+    try {
+      await api.deleteCategory(catId);
+      setCategories(prev => prev.filter(c => c.id !== catId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete category.');
+    }
+  };
+
+  // CRUD submits for menu products — POST / PUT /api/products
+  const handleProductSubmit = async (productData: Partial<Product>) => {
+    const body = {
+      name: productData.name || 'New Product',
+      category: productData.category || 'espresso',
+      price: productData.price ?? 0,
+      stock: productData.stock ?? 0,
+      description: productData.description || '',
+      image: productData.image || ''
+    };
+
+    try {
+      if (productData.id) {
+        // Edit Mode
+        const updated = await api.updateProduct(productData.id, body);
+        setProducts(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+      } else {
+        // Create Mode — backend assigns the id
+        const created = await api.createProduct(body);
+        setProducts(prev => [created, ...prev]);
+        // Category itemsCount is computed server-side; refresh to stay in sync.
+        try {
+          setCategories(await api.listCategories());
+        } catch {
+          // non-fatal — the product was still created
+        }
+      }
+      setEditingProduct(null);
+      setActiveTab('products');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save product.');
+    }
+  };
+
+  // Delete product — DELETE /api/products/{id}
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await api.deleteProduct(productId);
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      // Refresh categories so itemsCount reflects the removal.
+      try {
+        setCategories(await api.listCategories());
+      } catch {
+        // non-fatal
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete product.');
+    }
   };
 
   // Edit product navigation binder
@@ -160,37 +180,28 @@ export default function App() {
     setActiveTab('products');
   };
 
-  // Admin places a real order on the customer's behalf (from the Take Order modal)
-  const handlePlaceOrder = (payload: PlaceOrderPayload) => {
-    const subtotal = payload.items.reduce((sum, item) => sum + item.priceOrder, 0);
-    const tax = subtotal * 0.08;
-    const total = subtotal + tax;
-
-    const newOrder: Order = {
-      id: `${Math.floor(884 + Math.random() * 100)}`,
-      tableNumber: payload.tableNumber || (payload.isTakeout ? 'Takeout' : 'Walk-In'),
-      customerName: payload.customerName || undefined,
-      isTakeout: payload.isTakeout,
-      timeElapsed: 'Just Placed',
-      timestamp: 'Just now',
-      status: 'New',
-      server: 'Alex Rivera',
-      items: payload.items.map((item, idx) => ({
-        id: `oi_${Date.now()}_${idx}`,
-        productName: item.productName,
-        quantity: item.quantity,
-        size: item.size,
-        notes: item.notes,
-        priceOrder: item.priceOrder
-      })),
-      subtotal,
-      tax,
-      total,
-      kitchenNote: payload.items.flatMap(i => i.notes).join('; ') || 'Standard preparation.'
-    };
-
-    setOrders(prev => [newOrder, ...prev]);
-    setActiveTab('orders');
+  // Admin places a real order on the customer's behalf — POST /api/orders.
+  // The backend assigns the id and computes subtotal/tax/total.
+  const handlePlaceOrder = async (payload: PlaceOrderPayload) => {
+    try {
+      const created = await api.placeOrder({
+        tableNumber: payload.tableNumber || undefined,
+        customerName: payload.customerName || undefined,
+        isTakeout: payload.isTakeout,
+        items: payload.items.map(item => ({
+          productName: item.productName,
+          quantity: item.quantity,
+          size: item.size,
+          notes: item.notes,
+          priceOrder: item.priceOrder
+        })),
+        kitchenNote: payload.items.flatMap(i => i.notes).join('; ') || undefined
+      });
+      setOrders(prev => [created, ...prev]);
+      setActiveTab('orders');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to place order.');
+    }
   };
 
   return (
@@ -343,6 +354,19 @@ export default function App() {
 
           <div className="flex items-center gap-4" />
         </div>
+
+        {/* Initial load / error feedback */}
+        {loading && (
+          <div className="mb-4 px-4 py-2.5 rounded-xl bg-surface-container-low text-on-surface-variant text-xs font-semibold flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            Loading data from server…
+          </div>
+        )}
+        {loadError && !loading && (
+          <div className="mb-4 px-4 py-2.5 rounded-xl bg-error text-on-error text-xs font-semibold">
+            Could not load data: {loadError}
+          </div>
+        )}
 
         {/* Active tab content segment */}
         <div className="flex-1 pb-12 sm:pb-4">

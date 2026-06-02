@@ -34,6 +34,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return text ? (JSON.parse(text) as T) : (undefined as T);
 }
 
+// Build a query string from defined, non-empty params.
+function qs(params: Record<string, string | number | undefined>): string {
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '');
+  if (!entries.length) return '';
+  return '?' + entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+}
+
 // ---- Request payload shapes (mirror the backend OpenAPI schemas) ----
 
 export interface ProductRequest {
@@ -71,6 +78,61 @@ export interface UpdateStatusResponse {
   transaction?: Transaction;
 }
 
+// ---- Analytics / reports response shapes ----
+
+export interface NamedCount {
+  name: string;
+  unitsSold: number;
+}
+
+export interface CategoryShare {
+  name: string;
+  sharePct: number;
+}
+
+export interface ReportSummary {
+  range: string;
+  totalRevenue: number;
+  revenueGrowthPct: number;
+  totalOrders: number;
+  ordersGrowthPct: number;
+  activeOrders: number;
+  topSellingProduct: NamedCount;
+  topCategory: CategoryShare;
+}
+
+export interface RevenuePoint {
+  label: string;
+  date: string;
+  revenue: number;
+  isPeak: boolean;
+}
+
+export interface RevenueSeries {
+  range: string;
+  points: RevenuePoint[];
+}
+
+export interface TopProduct {
+  productName: string;
+  category: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+export interface ReportKpis {
+  range: string;
+  avgOrderValue: number;
+  avgOrderValueGrowthPct: number;
+  newCustomers: number;
+  newCustomersGrowthPct: number;
+  topCategory: string;
+  topCategorySharePct: number;
+  staffEfficiencyMinutes: number;
+}
+
+export type ReportRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 // ---- Typed endpoint client (the 11 backend endpoints) ----
 
 export const api = {
@@ -105,4 +167,31 @@ export const api = {
 
   // Transactions
   listTransactions: () => request<Transaction[]>('/api/transactions'),
+
+  // Reports / analytics
+  reportSummary: (range?: ReportRange) =>
+    request<ReportSummary>(`/api/reports/summary${qs({ range })}`),
+  revenueSeries: (range?: ReportRange) =>
+    request<RevenueSeries>(`/api/reports/revenue-series${qs({ range })}`),
+  topProducts: (range?: ReportRange, limit?: number) =>
+    request<TopProduct[]>(`/api/reports/top-products${qs({ range, limit })}`),
+  reportKpis: (range?: ReportRange) =>
+    request<ReportKpis>(`/api/reports/kpis${qs({ range })}`),
+
+  // Streams a binary report and triggers a browser download (PDF/CSV).
+  async downloadReport(range: ReportRange = 'monthly', format: 'pdf' | 'csv' = 'pdf'): Promise<void> {
+    const res = await fetch(`${BASE_URL}/api/reports/export${qs({ range, format })}`);
+    if (!res.ok) {
+      throw new Error(`Report export failed (${res.status})`);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-${range}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

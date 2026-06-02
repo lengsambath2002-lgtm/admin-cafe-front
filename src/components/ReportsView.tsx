@@ -5,38 +5,76 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   TrendingUp,
-  Search, 
-  Coffee, 
-  Pizza, // placeholder for food
-  TrendingDown, 
-  Sparkles,
-  FileSpreadsheet,
+  TrendingDown,
+  Search,
+  Coffee,
   Download,
-  ChevronRight,
-  ShieldCheck,
   CheckCircle,
   XCircle,
   Clock
 } from 'lucide-react';
 import { Transaction } from '../types';
+import {
+  api,
+  ReportRange,
+  ReportSummary,
+  RevenueSeries,
+  TopProduct,
+  ReportKpis
+} from '../lib/api';
 
 interface ReportsViewProps {
   transactions: Transaction[];
 }
 
+const fmtMoney = (n: number) =>
+  n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export default function ReportsView({ transactions }: ReportsViewProps) {
-  const [reportTab, setReportTab] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [reportTab, setReportTab] = useState<ReportRange>('monthly');
   const [searchTx, setSearchTx] = useState('');
 
+  // Server-computed analytics, refetched whenever the range tab changes.
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
+  const [series, setSeries] = useState<RevenueSeries | null>(null);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [kpis, setKpis] = useState<ReportKpis | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api.reportSummary(reportTab).then(s => active && setSummary(s)).catch(() => active && setSummary(null));
+    api.revenueSeries(reportTab).then(s => active && setSeries(s)).catch(() => active && setSeries(null));
+    api.topProducts(reportTab, 5).then(p => active && setTopProducts(p)).catch(() => active && setTopProducts([]));
+    api.reportKpis(reportTab).then(k => active && setKpis(k)).catch(() => active && setKpis(null));
+    return () => { active = false; };
+  }, [reportTab]);
+
+  // Export the current report as a PDF (GET /api/reports/export).
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      await api.downloadReport(reportTab, 'pdf');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to export report.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Transactions search filtering
-  const filteredTxs = transactions.filter(t => 
+  const filteredTxs = transactions.filter(t =>
     t.customerName.toLowerCase().includes(searchTx.toLowerCase()) ||
     t.id.toLowerCase().includes(searchTx.toLowerCase()) ||
     t.description.toLowerCase().includes(searchTx.toLowerCase())
   );
+
+  // Scale chart bars relative to the largest revenue point.
+  const points = series?.points ?? [];
+  const maxRevenue = points.reduce((m, p) => Math.max(m, p.revenue), 0) || 1;
 
   return (
     <div className="space-y-8 animate-fade-in text-left">
@@ -70,12 +108,13 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
             </button>
           </div>
 
-          <button 
-            onClick={() => alert('Downloading PDF Financial report payload...')}
-            className="bg-primary text-on-primary hover:bg-primary-container px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="bg-primary text-on-primary hover:bg-primary-container px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4 text-on-primary" />
-            Export PDF
+            {exporting ? 'Exporting…' : 'Export PDF'}
           </button>
         </div>
       </div>
@@ -87,15 +126,17 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
             <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">
               Total Revenue ({reportTab === 'monthly' ? 'This Month' : reportTab === 'weekly' ? 'This Week' : 'This Year'})
             </p>
-            <h3 className="text-4xl font-extrabold text-primary tracking-tight mt-2">$42,850.20</h3>
-            <div className="flex items-center gap-1.5 text-green-700/90 mt-2 font-semibold text-xs">
-              <TrendingUp className="w-4 h-4" />
-              <span>+12.5% vs last period</span>
+            <h3 className="text-4xl font-extrabold text-primary tracking-tight mt-2">
+              ${summary ? fmtMoney(summary.totalRevenue) : '—'}
+            </h3>
+            <div className={`flex items-center gap-1.5 mt-2 font-semibold text-xs ${(summary?.revenueGrowthPct ?? 0) < 0 ? 'text-red-600/90' : 'text-green-700/90'}`}>
+              {(summary?.revenueGrowthPct ?? 0) < 0 ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+              <span>{(summary?.revenueGrowthPct ?? 0) >= 0 ? '+' : ''}{(summary?.revenueGrowthPct ?? 0).toFixed(1)}% vs last period</span>
             </div>
           </div>
         </div>
 
-        {/* Custom Visual Bar Chart poles (Screen 5 replication) */}
+        {/* Custom Visual Bar Chart — driven by /api/reports/revenue-series */}
         <div className="relative h-44 w-full flex items-end justify-between gap-1 mt-6">
           {/* Guide Overlay Lines */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
@@ -105,34 +146,41 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
             <div className="border-t border-on-surface-variant w-full" />
           </div>
 
-          {/* Multi-frequency bars layout */}
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '40%' }} title="Oct 1: $14,200" />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '55%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '45%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '70%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '85%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '60%' }} />
-          {/* Main Peak Highlighted Pole (Screen 5 detail) */}
-          <div className="flex-1 bg-primary hover:opacity-100 rounded-t-lg transition-all cursor-pointer shadow-sm relative" style={{ height: '95%' }}>
-            <div className="absolute -top-8 left-1/2 -translate-y-1/2 -translate-x-1/2 bg-primary text-white text-[9px] px-2 py-0.5 rounded font-bold whitespace-nowrap shadow-md">
-              Oct 15 (Peak)
+          {points.length === 0 ? (
+            <div className="w-full h-full flex items-center justify-center text-xs text-on-surface-variant/50">
+              No revenue data for this period.
             </div>
-          </div>
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '75%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '50%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '65%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '80%' }} />
-          <div className="flex-1 bg-primary-container/20 hover:bg-primary-container/40 rounded-t-lg transition-all cursor-pointer" style={{ height: '70%' }} />
+          ) : (
+            points.map((point) => {
+              const heightPercent = Math.max(2, Math.round((point.revenue / maxRevenue) * 100));
+              return (
+                <div
+                  key={`${point.date}-${point.label}`}
+                  className={`flex-1 rounded-t-lg transition-all cursor-pointer relative group ${
+                    point.isPeak ? 'bg-primary hover:opacity-100 shadow-sm' : 'bg-primary-container/20 hover:bg-primary-container/40'
+                  }`}
+                  style={{ height: `${heightPercent}%` }}
+                  title={`${point.label}: $${fmtMoney(point.revenue)}`}
+                >
+                  {point.isPeak && (
+                    <div className="absolute -top-8 left-1/2 -translate-y-1/2 -translate-x-1/2 bg-primary text-white text-[9px] px-2 py-0.5 rounded font-bold whitespace-nowrap shadow-md">
+                      {point.label} (Peak)
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Date labels */}
-        <div className="flex justify-between mt-4 px-2 font-bold text-[10px] text-on-surface-variant font-mono uppercase tracking-wider">
-          <span>Oct 01</span>
-          <span>Oct 08</span>
-          <span>Oct 15</span>
-          <span>Oct 22</span>
-          <span>Oct 31</span>
-        </div>
+        {/* Date labels — first, middle, last buckets */}
+        {points.length > 0 && (
+          <div className="flex justify-between mt-4 px-2 font-bold text-[10px] text-on-surface-variant font-mono uppercase tracking-wider">
+            <span>{points[0].label}</span>
+            <span>{points[Math.floor(points.length / 2)].label}</span>
+            <span>{points[points.length - 1].label}</span>
+          </div>
+        )}
       </section>
 
       {/* Side-by-Side double Tables reports grid (Screen 5 split layout) */}
@@ -142,9 +190,11 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
         <div className="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant/25 rounded-2xl flex flex-col shadow-bento overflow-hidden">
           <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/20">
             <h4 className="font-bold text-lg text-primary tracking-tight">Top Selling Products</h4>
-            <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">This Month</span>
+            <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">
+              {reportTab === 'monthly' ? 'This Month' : reportTab === 'weekly' ? 'This Week' : 'This Year'}
+            </span>
           </div>
-          
+
           <div className="p-4 overflow-y-auto max-h-[420px] scrollbar-thin">
             <table className="w-full text-left border-separate border-spacing-y-2">
               <thead>
@@ -155,69 +205,31 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
-                <tr className="group hover:bg-surface-container-low/40 transition-colors">
-                  <td className="px-3 py-3 rounded-l-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-secondary-container/60 text-primary flex items-center justify-center shrink-0">
-                        <Coffee className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-xs text-primary">Signature Espresso</p>
-                        <p className="text-[10px] text-on-surface-variant">Coffee Beans</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 font-medium text-xs text-right">1,240</td>
-                  <td className="px-3 py-3 font-bold text-xs text-primary text-right rounded-r-xl">$14,880.00</td>
-                </tr>
-
-                <tr className="group hover:bg-surface-container-low/40 transition-colors">
-                  <td className="px-3 py-3 rounded-l-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-secondary-container/60 text-primary flex items-center justify-center shrink-0">
-                        <Coffee className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-xs text-primary">Oat Milk Latte</p>
-                        <p className="text-[10px] text-on-surface-variant">Hot Beverages</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 font-medium text-xs text-right">980</td>
-                  <td className="px-3 py-3 font-bold text-xs text-primary text-right rounded-r-xl">$5,390.00</td>
-                </tr>
-
-                <tr className="group hover:bg-surface-container-low/40 transition-colors">
-                  <td className="px-3 py-3 rounded-l-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-secondary-container/60 text-primary flex items-center justify-center shrink-0">
-                        <Coffee className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-xs text-primary">Almond Croissant</p>
-                        <p className="text-[10px] text-on-surface-variant">Pastries</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 font-medium text-xs text-right">720</td>
-                  <td className="px-3 py-3 font-bold text-xs text-primary text-right rounded-r-xl">$3,240.00</td>
-                </tr>
-
-                <tr className="group hover:bg-surface-container-low/40 transition-colors">
-                  <td className="px-3 py-3 rounded-l-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-secondary-container/60 text-primary flex items-center justify-center shrink-0">
-                        <Coffee className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-xs text-primary">Cold Brew Blend</p>
-                        <p className="text-[10px] text-on-surface-variant">Whole Beans</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 font-medium text-xs text-right">450</td>
-                  <td className="px-3 py-3 font-bold text-xs text-primary text-right rounded-r-xl">$6,750.00</td>
-                </tr>
+                {topProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-3 py-8 text-center text-xs text-on-surface-variant/50">
+                      No sales data for this period.
+                    </td>
+                  </tr>
+                ) : (
+                  topProducts.map((p) => (
+                    <tr key={p.productName} className="group hover:bg-surface-container-low/40 transition-colors">
+                      <td className="px-3 py-3 rounded-l-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-secondary-container/60 text-primary flex items-center justify-center shrink-0">
+                            <Coffee className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs text-primary">{p.productName}</p>
+                            <p className="text-[10px] text-on-surface-variant">{p.category}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 font-medium text-xs text-right">{p.unitsSold.toLocaleString('en-US')}</td>
+                      <td className="px-3 py-3 font-bold text-xs text-primary text-right rounded-r-xl">${fmtMoney(p.revenue)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -266,6 +278,11 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
                           <CheckCircle className="w-2.5 h-2.5 text-green-700" />
                           COMPLETED
                         </span>
+                      ) : tx.status === 'PENDING' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-600">
+                          <Clock className="w-2.5 h-2.5 text-amber-600" />
+                          PENDING
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-50 text-orange-600">
                           <XCircle className="w-2.5 h-2.5 text-orange-600" />
@@ -291,28 +308,34 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
         {/* Avg Order Value KPI Tile */}
         <div className="bg-secondary-container border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
           <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">AVG ORDER VALUE</p>
-          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">$18.42</h5>
-          <p className="text-[10px] text-on-surface-variant/80 mt-1">+4% from last week</p>
+          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">${kpis ? fmtMoney(kpis.avgOrderValue) : '—'}</h5>
+          <p className="text-[10px] text-on-surface-variant/80 mt-1">
+            {kpis ? `${kpis.avgOrderValueGrowthPct >= 0 ? '+' : ''}${kpis.avgOrderValueGrowthPct.toFixed(1)}% from last period` : ' '}
+          </p>
         </div>
 
         {/* New Customers KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
           <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">NEW CUSTOMERS</p>
-          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">342</h5>
-          <p className="text-[10px] text-green-700 font-semibold mt-1">+22% monthly growth</p>
+          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis ? kpis.newCustomers.toLocaleString('en-US') : '—'}</h5>
+          <p className={`text-[10px] font-semibold mt-1 ${(kpis?.newCustomersGrowthPct ?? 0) < 0 ? 'text-red-600' : 'text-green-700'}`}>
+            {kpis ? `${kpis.newCustomersGrowthPct >= 0 ? '+' : ''}${kpis.newCustomersGrowthPct.toFixed(1)}% growth` : ' '}
+          </p>
         </div>
 
         {/* Top Category KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
           <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">TOP CATEGORY</p>
-          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">Espresso</h5>
-          <p className="text-[10px] text-on-surface-variant/85 mt-1">34% of total daily volume</p>
+          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis?.topCategory ?? '—'}</h5>
+          <p className="text-[10px] text-on-surface-variant/85 mt-1">
+            {kpis ? `${kpis.topCategorySharePct.toFixed(0)}% of total volume` : ' '}
+          </p>
         </div>
 
         {/* Staff Efficiency KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
           <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">STAFF EFFICIENCY</p>
-          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">4.2m</h5>
+          <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis ? `${kpis.staffEfficiencyMinutes.toFixed(1)}m` : '—'}</h5>
           <p className="text-[10px] text-on-surface-variant/85 mt-1">Avg. turnaround times per ticket</p>
         </div>
 

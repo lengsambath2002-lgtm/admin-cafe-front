@@ -19,7 +19,9 @@ import {
   Plus,
   LogOut,
   LogIn,
-  HelpCircle
+  HelpCircle,
+  Sparkles,
+  Check
 } from 'lucide-react';
 
 import { Category, Product, Order, Transaction } from '../types';
@@ -51,6 +53,24 @@ function deleteImageIfUploaded(image?: string | null): void {
   const filename = image.split('/').pop();
   if (filename) api.deleteUpload(filename).catch(() => {});
 }
+
+// Auto step-by-step walkthrough shown to guests on first visit.
+const GUEST_TOUR = [
+  { icon: Sparkles, title: 'Welcome 👋', desc: "Let's quickly show you how to take an order — it only takes 3 steps." },
+  { icon: ShoppingCart, title: '1. Browse the menu', desc: 'Tap any product card to add it to the order. Use the category chips to filter the menu.' },
+  { icon: Plus, title: '2. Customize the order', desc: 'In the order panel, tap a line to set size, sugar, quantity and notes — and add a table or customer name.' },
+  { icon: Check, title: '3. Place the order', desc: 'Check the total, then tap Place Order. That’s it — you’re ready to serve!' },
+];
+
+// Auto walkthrough shown to admins on first visit.
+const ADMIN_TOUR = [
+  { icon: Sparkles, title: 'Welcome 👋', desc: 'A quick tour of your café admin — orders, menu, products and reports.' },
+  { icon: LayoutDashboard, title: 'Dashboard', desc: 'Track daily revenue, total orders and your sales trend at a glance.' },
+  { icon: ShoppingCart, title: 'Take Order', desc: 'Place orders and advance their status: New → Preparing → Ready → Complete.' },
+  { icon: Boxes, title: 'Products', desc: 'Add, edit or remove products and upload their images.' },
+  { icon: Tags, title: 'Menu', desc: 'Group products into categories, each with its own image.' },
+  { icon: BarChart3, title: 'Reports', desc: 'Review performance by range and export the figures as CSV.' },
+];
 
 export default function App() {
   const router = useRouter();
@@ -168,6 +188,26 @@ export default function App() {
 
   // How-to guide modal
   const [showHelp, setShowHelp] = useState(false);
+
+  // Auto step-by-step walkthrough (first visit only) — role-specific steps.
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+  const activeTour = isGuest ? GUEST_TOUR : ADMIN_TOUR;
+  const tourKey = isGuest ? 'brewmaster_guest_tour' : 'brewmaster_admin_tour';
+
+  useEffect(() => {
+    if (!authChecked || typeof window === 'undefined') return;
+    const key = isGuest ? 'brewmaster_guest_tour' : 'brewmaster_admin_tour';
+    if (!localStorage.getItem(key)) {
+      setTourStep(0);
+      setShowTour(true);
+    }
+  }, [authChecked, isGuest]);
+
+  const closeTour = () => {
+    setShowTour(false);
+    try { localStorage.setItem(tourKey, '1'); } catch { /* ignore */ }
+  };
 
   // Jump to the Orders (Take Order) screen — used by header / dashboard shortcuts.
   const goToTakeOrder = () => {
@@ -560,6 +600,65 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Auto step-by-step walkthrough (guests and admins) */}
+      {showTour && (() => {
+        const step = activeTour[tourStep];
+        const StepIcon = step.icon;
+        const isLast = tourStep === activeTour.length - 1;
+        return (
+          <div className="fixed inset-0 z-[60] bg-primary/30 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-surface-container-lowest rounded-2xl shadow-lg w-full max-w-sm p-6 text-center animate-scale-up relative">
+              <button
+                onClick={closeTour}
+                className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="w-14 h-14 rounded-2xl bg-secondary-container/60 flex items-center justify-center mx-auto mb-4">
+                <StepIcon className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold text-primary tracking-tight">{step.title}</h3>
+              <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">{step.desc}</p>
+
+              {/* Progress dots */}
+              <div className="flex justify-center gap-1.5 my-5">
+                {activeTour.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${i === tourStep ? 'w-5 bg-primary' : 'w-1.5 bg-outline-variant'}`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                {tourStep > 0 && (
+                  <button
+                    onClick={() => setTourStep((s) => s - 1)}
+                    className="flex-1 bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs py-3 rounded-xl transition-all cursor-pointer"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  onClick={() => (isLast ? closeTour() : setTourStep((s) => s + 1))}
+                  className="flex-1 bg-primary text-on-primary hover:bg-primary-container font-bold text-xs py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
+                >
+                  {isLast ? 'Got it' : 'Next'}
+                </button>
+              </div>
+
+              {!isLast && (
+                <button onClick={closeTour} className="mt-3 text-[11px] font-semibold text-on-surface-variant/70 hover:text-primary cursor-pointer">
+                  Skip tour
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main Content Pane wrapper */}
       <main className={`flex-1 ${isGuest ? '' : 'md:ml-[280px]'} p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between`}>

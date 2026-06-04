@@ -10,8 +10,9 @@ import {
   Search, 
   Grid3X3, 
   List, 
-  Edit3, 
-  Plus, 
+  Edit3,
+  Plus,
+  PlusCircle,
   AlertTriangle,
   RotateCw,
   Trash2
@@ -52,40 +53,10 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Search and Filters Segment */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h2 className="text-3xl font-bold text-primary tracking-tight">Product Catalog</h2>
-          <p className="text-secondary text-base mt-1">Manage your menu offerings, edit prices and monitor inventory levels.</p>
-        </div>
-
-        {/* Catalog layout togglers + Trigger buttons */}
-        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-          <div className="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant/35 shrink-0">
-            <button 
-              onClick={() => setViewStyle('grid')}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
-              title="Grid Layout"
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setViewStyle('list')}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'list' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
-              title="List Density Layout"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button 
-            onClick={() => onNavigate('register_product')}
-            className="bg-primary text-on-primary hover:bg-primary-container px-5 h-11 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4.5 h-4.5 text-on-primary" />
-            Add Product
-          </button>
-        </div>
+      {/* Page heading */}
+      <div>
+        <h2 className="text-3xl font-bold text-primary tracking-tight">Product Catalog</h2>
+        <p className="text-secondary text-base mt-1">Manage your menu offerings, edit prices and monitor inventory levels.</p>
       </div>
 
       {/* Filter and search controls row */}
@@ -94,7 +65,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
         <div className="flex gap-2.5 flex-wrap">
           <button 
             onClick={() => setSelectedCategory('All')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
           >
             All
           </button>
@@ -102,25 +73,45 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             <button 
               key={cat.id}
               onClick={() => setSelectedCategory(cat.name)}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${selectedCategory === cat.name ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+              className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === cat.name ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
             >
               {cat.name}
             </button>
           ))}
         </div>
 
-        {/* Search Input bar */}
-        <div className="relative w-full md:w-80">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
-            <Search className="w-4 h-4" />
-          </span>
-          <input 
-            type="text" 
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-low text-xs px-4 py-2.5 pl-9 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-          />
+        {/* View toggle (card/table) + search */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant/35 shrink-0">
+            <button
+              onClick={() => setViewStyle('grid')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'grid' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+              title="Grid Layout"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewStyle('list')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all cursor-pointer ${viewStyle === 'list' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'}`}
+              title="List Density Layout"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Search Input bar */}
+          <div className="relative w-full md:w-80">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-surface-container-low text-xs px-4 py-2.5 pl-9 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
+            />
+          </div>
         </div>
       </div>
 
@@ -295,6 +286,15 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
           </table>
         </div>
       )}
+
+      {/* Floating Add Product button — matches the Menu page's Add Category FAB */}
+      <button
+        onClick={() => onNavigate('register_product')}
+        className="fixed bottom-24 right-8 lg:bottom-12 lg:right-12 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold flex items-center gap-2.5 px-6 py-4 rounded-full shadow-lg hover:scale-103 hover:shadow-xl active:scale-95 transition-all z-20 cursor-pointer"
+      >
+        <PlusCircle className="w-5 h-5 text-on-primary" />
+        <span>Add Product</span>
+      </button>
     </div>
   );
 }

@@ -53,11 +53,12 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
     return () => { active = false; };
   }, [reportTab]);
 
-  // Export the current report as a PDF (GET /api/reports/export).
+  // Export the current report as a CSV (GET /api/reports/export). The backend
+  // doesn't implement PDF yet (501), so we export CSV.
   const handleExport = async () => {
     try {
       setExporting(true);
-      await api.downloadReport(reportTab, 'pdf');
+      await api.downloadReport(reportTab, 'csv');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to export report.');
     } finally {
@@ -114,7 +115,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
             className="bg-primary text-on-primary hover:bg-primary-container px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4 text-on-primary" />
-            {exporting ? 'Exporting…' : 'Export PDF'}
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
         </div>
       </div>

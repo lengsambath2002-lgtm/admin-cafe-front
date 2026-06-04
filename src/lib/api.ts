@@ -10,11 +10,43 @@ const BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || 'https://admin-cafe-back-1.onrender.com'
 ).replace(/\/+$/, '');
 
+// ---- Bearer token (every endpoint except /api/login and /api/guest/orders requires it) ----
+const TOKEN_KEY = 'brewmaster_token';
+
+export function setAuthToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+// Build the auth header for raw fetch() calls (uploads, downloads).
+function authHeader(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(),
+      ...(options?.headers || {}),
+    },
     ...options,
   });
+
+  // An authenticated session that got rejected (expired/invalid token) — clear it
+  // and bounce to login. Guests have no token, so they're left alone here.
+  if (res.status === 401 && typeof window !== 'undefined' && getAuthToken()) {
+    setAuthToken(null);
+    localStorage.removeItem('brewmaster_auth');
+    if (window.location.pathname !== '/login') window.location.href = '/login';
+  }
 
   if (!res.ok) {
     let detail = '';
@@ -78,6 +110,43 @@ export interface UpdateStatusResponse {
   transaction?: Transaction;
 }
 
+// PATCH /api/orders/{id} — all fields optional (partial edit of a placed order).
+export interface UpdateOrderRequest {
+  tableNumber?: string;
+  customerName?: string;
+  isTakeout?: boolean;
+  kitchenNote?: string;
+  items?: PlaceOrderItemRequest[];
+}
+
+export interface RefundRequest {
+  amount?: number;
+  reason?: string;
+}
+
+export interface RefundResponse {
+  transaction: Transaction;
+  order?: Order;
+}
+
+// ---- Auth shapes ----
+
+export interface BackendAuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: BackendAuthUser;
+}
+
+export interface MeResponse {
+  user: BackendAuthUser;
+}
+
 // ---- Analytics / reports response shapes ----
 
 export interface NamedCount {
@@ -133,18 +202,33 @@ export interface ReportKpis {
 
 export type ReportRange = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
-// ---- Typed endpoint client (the 11 backend endpoints) ----
+// ---- Typed endpoint client (mirrors api-docs.json) ----
 
 export const api = {
+  // Auth
+  login: (email: string, password: string) =>
+    request<LoginResponse>('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  logout: () => request<void>('/api/logout', { method: 'POST' }),
+  me: () => request<MeResponse>('/api/me'),
+
   // Categories
   listCategories: () => request<Category[]>('/api/categories'),
+  // Public guest menu — no auth token required.
+  listGuestCategories: () => request<Category[]>('/api/guest/categories'),
   createCategory: (body: CategoryRequest) =>
     request<Category>('/api/categories', { method: 'POST', body: JSON.stringify(body) }),
+  updateCategory: (id: string, body: CategoryRequest) =>
+    request<Category>(`/api/categories/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
   deleteCategory: (id: string) =>
     request<void>(`/api/categories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // Products
   listProducts: () => request<Product[]>('/api/products'),
+  // Public guest menu — no auth token required.
+  listGuestProducts: () => request<Product[]>('/api/guest/products'),
   createProduct: (body: ProductRequest) =>
     request<Product>('/api/products', { method: 'POST', body: JSON.stringify(body) }),
   updateProduct: (id: string, body: ProductRequest) =>
@@ -157,8 +241,20 @@ export const api = {
 
   // Orders
   listOrders: () => request<Order[]>('/api/orders'),
+  // Orders placed by guests — admin-only view.
+  listGuestOrders: () => request<Order[]>('/api/orders/guest'),
   placeOrder: (body: PlaceOrderRequest) =>
     request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(body) }),
+  // Public guest checkout — no auth token required.
+  placeGuestOrder: (body: PlaceOrderRequest) =>
+    request<Order>('/api/guest/orders', { method: 'POST', body: JSON.stringify(body) }),
+  updateOrder: (id: string, body: UpdateOrderRequest) =>
+    request<Order>(`/api/orders/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  cancelOrder: (id: string) =>
+    request<void>(`/api/orders/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   updateOrderStatus: (id: string, status: string) =>
     request<UpdateStatusResponse>(`/api/orders/${encodeURIComponent(id)}/status`, {
       method: 'PATCH',
@@ -167,6 +263,11 @@ export const api = {
 
   // Transactions
   listTransactions: () => request<Transaction[]>('/api/transactions'),
+  refundTransaction: (id: string, body: RefundRequest = {}) =>
+    request<RefundResponse>(`/api/transactions/${encodeURIComponent(id)}/refund`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   // Reports / analytics
   reportSummary: (range?: ReportRange) =>
@@ -179,8 +280,11 @@ export const api = {
     request<ReportKpis>(`/api/reports/kpis${qs({ range })}`),
 
   // Streams a binary report and triggers a browser download (PDF/CSV).
-  async downloadReport(range: ReportRange = 'monthly', format: 'pdf' | 'csv' = 'pdf'): Promise<void> {
-    const res = await fetch(`${BASE_URL}/api/reports/export${qs({ range, format })}`);
+  // Backend supports csv and xlsx (pdf returns 501 — not implemented).
+  async downloadReport(range: ReportRange = 'monthly', format: 'csv' | 'xlsx' = 'csv'): Promise<void> {
+    const res = await fetch(`${BASE_URL}/api/reports/export${qs({ range, format })}`, {
+      headers: authHeader(),
+    });
     if (!res.ok) {
       throw new Error(`Report export failed (${res.status})`);
     }
@@ -201,7 +305,7 @@ export const api = {
   async uploadImage(file: File): Promise<{ url: string; filename?: string; raw: Record<string, string> }> {
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: form });
+    const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: form, headers: authHeader() });
     if (!res.ok) {
       throw new Error(`Upload failed (${res.status})`);
     }
@@ -211,7 +315,10 @@ export const api = {
     const url = candidate && !/^https?:\/\//i.test(candidate)
       ? `${BASE_URL}${candidate.startsWith('/') ? '' : '/'}${candidate}`
       : candidate;
-    return { url, filename: raw.filename, raw };
+    // The server only returns a url, so derive the filename (basename) from it
+    // — that's what DELETE /api/upload/{filename} needs.
+    const filename = raw.filename ?? (url ? url.split('/').pop() || undefined : undefined);
+    return { url, filename, raw };
   },
 
   // Removes a previously uploaded file (DELETE /api/upload/{filename}).

@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Coffee,
   LayoutDashboard,
@@ -13,27 +14,74 @@ import {
   Boxes,
   Tags,
   BarChart3,
-  Settings,
-  HelpCircle,
-  Search,
   Menu,
   X,
-  Plus
+  Plus,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 
 import { Category, Product, Order, Transaction } from '../types';
 import { api } from '../lib/api';
+import { getAuthUser, signOut, AuthUser, GUEST_USER } from '../lib/auth';
 
 import DashboardView from '../components/DashboardView';
-import OrdersView from '../components/OrdersView';
 import ProductsView from '../components/ProductsView';
 import CategoriesView from '../components/CategoriesView';
 import ReportsView from '../components/ReportsView';
 import RegisterProductView from '../components/RegisterProductView';
-import TakeOrderModal, { PlaceOrderPayload } from '../components/TakeOrderModal';
+import TakeOrderView, { PlaceOrderPayload } from '../components/TakeOrderView';
+
+// Merge orders from several sources (regular + guest), de-duped by id, newest first.
+function mergeOrders(...results: PromiseSettledResult<Order[]>[]): Order[] {
+  const byId = new Map<string, Order>();
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      for (const o of r.value) byId.set(o.id, o);
+    }
+  }
+  return Array.from(byId.values()).sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''));
+}
+
+// If an image URL points to a backend-uploaded file (/uploads/...), delete that
+// file too (best-effort). Preset/external images are left untouched.
+function deleteImageIfUploaded(image?: string | null): void {
+  if (!image || !image.includes('/uploads/')) return;
+  const filename = image.split('/').pop();
+  if (filename) api.deleteUpload(filename).catch(() => {});
+}
 
 export default function App() {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+
+  // Auth gate — redirect to /login until a session is confirmed.
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    // No forced login — visitors land on the Take Order page as a guest.
+    // A persisted admin session keeps full access; admins reach the login form
+    // via the "Admin Login" button.
+    const user = getAuthUser() ?? GUEST_USER;
+    setAuthUser(user);
+    if (user.role === 'guest') setActiveTab('orders');
+    setAuthChecked(true);
+  }, []);
+
+  const handleLogout = () => {
+    // Best-effort backend logout; clear the local session regardless.
+    api.logout().catch(() => {});
+    signOut();
+    router.replace('/login');
+  };
+
+  // Guests reach the admin login form here.
+  const goToAdminLogin = () => router.push('/login');
+
+  // Guests are restricted to the Take Order page; admins manage everything.
+  const isGuest = authUser?.role === 'guest';
 
   // Backend-backed reactive states (hydrated from the API on mount)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -46,24 +94,35 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Hydrate all collections from the backend once on mount
+  // Hydrate all collections from the backend once the session is confirmed.
   useEffect(() => {
+    if (!authChecked) return;
     let active = true;
     (async () => {
       try {
         setLoading(true);
         setLoadError(null);
-        const [cats, prods, ords, txs] = await Promise.all([
-          api.listCategories(),
-          api.listProducts(),
-          api.listOrders(),
-          api.listTransactions()
+        // Fetch independently so one failing endpoint doesn't blank the whole app.
+        // Guests use the public guest menu endpoints (no token) and don't load the
+        // admin-only order/transaction lists. Admins merge regular + guest orders.
+        const empty = Promise.resolve([] as never[]);
+        const [catsR, prodsR, ordsR, guestR, txsR] = await Promise.allSettled([
+          isGuest ? api.listGuestCategories() : api.listCategories(),
+          isGuest ? api.listGuestProducts() : api.listProducts(),
+          isGuest ? empty : api.listOrders(),
+          isGuest ? empty : api.listGuestOrders(),
+          isGuest ? empty : api.listTransactions()
         ]);
         if (!active) return;
-        setCategories(cats);
-        setProducts(prods);
-        setOrders(ords);
-        setTransactions(txs);
+        if (catsR.status === 'fulfilled') setCategories(catsR.value);
+        if (prodsR.status === 'fulfilled') setProducts(prodsR.value);
+        setOrders(mergeOrders(ordsR, guestR));
+        if (txsR.status === 'fulfilled') setTransactions(txsR.value);
+        // Flag an error only if the core catalog couldn't load.
+        if (catsR.status === 'rejected' && prodsR.status === 'rejected') {
+          const reason = catsR.reason;
+          setLoadError(reason instanceof Error ? reason.message : 'Failed to load data from the server.');
+        }
       } catch (err) {
         if (active) setLoadError(err instanceof Error ? err.message : 'Failed to load data from the server.');
       } finally {
@@ -73,19 +132,48 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authChecked]);
 
-  // Search in global bar if focused
-  const [globalSearch, setGlobalSearch] = useState('');
+  // Keep orders/transactions fresh so admins see orders placed by guests (or other
+  // devices) in near-real-time, without a manual reload. Guests don't view the list,
+  // so we only poll for admins.
+  useEffect(() => {
+    if (!authChecked || isGuest) return;
+    let active = true;
+    const refresh = async () => {
+      const [ordsR, guestR, txsR] = await Promise.allSettled([
+        api.listOrders(),
+        api.listGuestOrders(),
+        api.listTransactions(),
+      ]);
+      if (!active) return;
+      // Only replace data when at least one source succeeded — avoids wiping good
+      // data on a transient failure.
+      if (ordsR.status === 'fulfilled' || guestR.status === 'fulfilled') {
+        setOrders(mergeOrders(ordsR, guestR));
+      }
+      if (txsR.status === 'fulfilled') setTransactions(txsR.value);
+    };
+    const id = setInterval(refresh, 15000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [authChecked, isGuest]);
+
 
   // Mobile sidebar drawer helper
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Take-order ticket modal (admin builds the customer's order)
-  const [takeOrderOpen, setTakeOrderOpen] = useState(false);
+  // Jump to the Orders (Take Order) screen — used by header / dashboard shortcuts.
+  const goToTakeOrder = () => {
+    setActiveTab('orders');
+    setEditingProduct(null);
+  };
 
-  // order lifecycles transitional triggers — PATCH /api/orders/{id}/status
-  const handleOrderUpdate = async (orderId: string, status: Order['status']) => {
+  // order lifecycle transitions — PATCH /api/orders/{id}/status.
+  // Returns the updated order so the Take Order panel can reflect the new status.
+  const handleOrderUpdate = async (orderId: string, status: Order['status']): Promise<Order> => {
     try {
       const { order, transaction } = await api.updateOrderStatus(orderId, status);
       setOrders(prev => prev.map(o => (o.id === orderId ? order : o)));
@@ -93,8 +181,10 @@ export default function App() {
       if (transaction) {
         setTransactions(prev => [transaction, ...prev]);
       }
+      return order;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update order status.');
+      throw err;
     }
   };
 
@@ -110,9 +200,11 @@ export default function App() {
 
   // deleting categories — DELETE /api/categories/{id}
   const handleDeleteCategory = async (catId: string) => {
+    const image = categories.find(c => c.id === catId)?.image;
     try {
       await api.deleteCategory(catId);
       setCategories(prev => prev.filter(c => c.id !== catId));
+      deleteImageIfUploaded(image);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete category.');
     }
@@ -154,9 +246,11 @@ export default function App() {
 
   // Delete product — DELETE /api/products/{id}
   const handleDeleteProduct = async (productId: string) => {
+    const prod = products.find(p => p.id === productId);
     try {
       await api.deleteProduct(productId);
       setProducts(prev => prev.filter(p => p.id !== productId));
+      deleteImageIfUploaded(prod?.imageUrl || prod?.image);
       // Refresh categories so itemsCount reflects the removal.
       try {
         setCategories(await api.listCategories());
@@ -180,11 +274,12 @@ export default function App() {
     setActiveTab('products');
   };
 
-  // Admin places a real order on the customer's behalf — POST /api/orders.
-  // The backend assigns the id and computes subtotal/tax/total.
-  const handlePlaceOrder = async (payload: PlaceOrderPayload) => {
+  // Places an order. Guests have no token, so they go through the public
+  // POST /api/guest/orders; admins use POST /api/orders. The backend assigns the
+  // id and computes subtotal/tax/total, and returns the created order.
+  const handlePlaceOrder = async (payload: PlaceOrderPayload): Promise<Order> => {
     try {
-      const created = await api.placeOrder({
+      const body = {
         tableNumber: payload.tableNumber || undefined,
         customerName: payload.customerName || undefined,
         isTakeout: payload.isTakeout,
@@ -196,13 +291,19 @@ export default function App() {
           priceOrder: item.priceOrder
         })),
         kitchenNote: payload.items.flatMap(i => i.notes).join('; ') || undefined
-      });
+      };
+      const created = isGuest ? await api.placeGuestOrder(body) : await api.placeOrder(body);
       setOrders(prev => [created, ...prev]);
-      setActiveTab('orders');
+      return created;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to place order.');
+      throw err;
     }
   };
+
+  // Hold rendering until the auth check resolves — avoids flashing the dashboard
+  // before a redirect to /login.
+  if (!authChecked) return null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row relative">
@@ -215,7 +316,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setTakeOrderOpen(true)}
+            onClick={goToTakeOrder}
             className="p-1 px-3 bg-primary text-on-primary rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -235,11 +336,11 @@ export default function App() {
         <div className="md:hidden fixed inset-x-0 top-16 bg-surface border-b border-outline-variant/45 z-30 flex flex-col p-4 space-y-2 text-left animate-slide-down">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'orders', label: 'Orders', icon: ShoppingCart },
+            { id: 'orders', label: 'Take Order', icon: ShoppingCart },
             { id: 'products', label: 'Products', icon: Boxes },
             { id: 'categories', label: 'Menu', icon: Tags },
             { id: 'reports', label: 'Reports', icon: BarChart3 },
-          ].map((item) => {
+          ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
             const IconComp = item.icon;
             const isSelected = activeTab === item.id;
             return (
@@ -258,6 +359,17 @@ export default function App() {
               </button>
             );
           })}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (isGuest) goToAdminLogin();
+              else handleLogout();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-xs leading-none text-left tracking-wide text-on-surface-variant/80 hover:bg-surface-container"
+          >
+            {isGuest ? <LogIn className="w-4.5 h-4.5" /> : <LogOut className="w-4.5 h-4.5" />}
+            {isGuest ? 'Admin Login' : 'Log out'}
+          </button>
         </div>
       )}
 
@@ -274,11 +386,11 @@ export default function App() {
           <nav className="space-y-1 px-2.5">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'orders', label: 'Orders', icon: ShoppingCart },
-              { id: 'products', label: 'Products', icon: Boxes },
+              { id: 'orders', label: 'Take Order', icon: ShoppingCart },
+                { id: 'products', label: 'Products', icon: Boxes },
               { id: 'categories', label: 'Menu', icon: Tags },
               { id: 'reports', label: 'Reports', icon: BarChart3 },
-            ].map((item) => {
+            ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
               const IconComp = item.icon;
               const isSelected = activeTab === item.id || (item.id === 'products' && activeTab === 'register_product');
               return (
@@ -305,55 +417,19 @@ export default function App() {
         {/* Dynamic Admin Profile section footer */}
         <div className="border-t border-outline-variant/20 pt-6 px-4 space-y-4">
           <div className="space-y-0.5">
-            <a href="#" className="flex items-center gap-3.5 px-4 py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all">
-              <Settings className="w-4.5 h-4.5" />
-              <span>Settings</span>
-            </a>
-            <a href="#" className="flex items-center gap-3.5 px-4 py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all">
-              <HelpCircle className="w-4.5 h-4.5" />
-              <span>Support</span>
-            </a>
-          </div>
-
-          <div className="flex items-center gap-3.5 px-4 select-none">
-            <img
-              alt="Alex Rivera Admin"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUytDonYMCv1p1gTGFYyRF2q05mBlYP8nbj-HbWAiHC5r8cRFwR0IzDi9Hc9yM6C21odVWOILZYc_30j5L48AvVt14f9Z8yRBGJnLUMROeMEw5bH6zG2K2RL6Sato7URZdpW31ntaCiNbMTozygtdLIgBNNhKqygRtLVMqIFN7h8UJzGjOy_tu8DIMiD4_OJ7psOZqzS2fjM89cQAfGnMPewOhzmYSbadtx0yGCqgUV3mxx7bUdEXxGHH9hT2oP_lzFnY1zbtHNtM"
-              className="w-10 h-10 rounded-full object-cover border-2 border-secondary-container"
-              referrerPolicy="no-referrer"
-            />
-            <div>
-              <p className="font-bold text-[13px] text-primary leading-tight">Alex Rivera</p>
-              <p className="text-[10px] font-bold text-on-surface-variant/75 uppercase tracking-wider mt-0.5">Owner</p>
-            </div>
+            <button
+              onClick={isGuest ? goToAdminLogin : handleLogout}
+              className="w-full flex items-center gap-3.5 px-4 py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all cursor-pointer"
+            >
+              {isGuest ? <LogIn className="w-4.5 h-4.5" /> : <LogOut className="w-4.5 h-4.5" />}
+              <span>{isGuest ? 'Admin Login' : 'Log out'}</span>
+            </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content Pane wrapper */}
       <main className="flex-1 md:ml-[280px] p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between">
-
-        {/* Top Desktop Search and status panel */}
-        <div className="hidden md:flex justify-between items-center mb-8 h-12">
-          {/* Universal searching indicator */}
-          <div className="relative w-full max-w-md text-left">
-            <Search className="w-4 h-4 text-on-surface-variant/45 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search active listings, register logs..."
-              value={globalSearch}
-              onChange={(e) => {
-                setGlobalSearch(e.target.value);
-                if (activeTab === 'products' || activeTab === 'dashboard') {
-                  // forward search relevance automatically
-                }
-              }}
-              className="w-full bg-surface-container-low text-xs pl-10 pr-4 py-2.5 rounded-xl border-none focus:ring-1 focus:ring-primary focus:bg-white outline-none transition-all placeholder:text-on-surface-variant/45"
-            />
-          </div>
-
-          <div className="flex items-center gap-4" />
-        </div>
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -369,7 +445,7 @@ export default function App() {
         )}
 
         {/* Active tab content segment */}
-        <div className="flex-1 pb-12 sm:pb-4">
+        <div className="flex-1 w-full max-w-[1500px] mx-auto pb-12 sm:pb-4">
           {activeTab === 'dashboard' && (
             <DashboardView
               orders={orders}
@@ -385,10 +461,13 @@ export default function App() {
           )}
 
           {activeTab === 'orders' && (
-            <OrdersView
+            <TakeOrderView
+              products={products}
+              categories={categories}
               orders={orders}
-              onOrderUpdate={handleOrderUpdate}
-              onTakeOrder={() => setTakeOrderOpen(true)}
+              showOrderHistory={!isGuest}
+              onPlaceOrder={handlePlaceOrder}
+              onUpdateStatus={handleOrderUpdate}
             />
           )}
 
@@ -438,7 +517,7 @@ export default function App() {
           { id: 'products', label: 'Products', icon: Boxes },
           { id: 'categories', label: 'Menu', icon: Tags },
           { id: 'dashboard', label: 'Reports', icon: BarChart3 }, // "Reports" icon and bottom nav naming matches Screen 1
-        ].map((item) => {
+        ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
           const IconComp = item.icon;
           const isSelected = activeTab === item.id || (item.id === 'dashboard' && activeTab === 'reports');
           const isCategorySelected = (item.id === 'categories' && activeTab === 'categories');
@@ -470,14 +549,6 @@ export default function App() {
           );
         })}
       </nav>
-
-      {/* Take Order ticket modal — admin builds the customer's order */}
-      <TakeOrderModal
-        isOpen={takeOrderOpen}
-        onClose={() => setTakeOrderOpen(false)}
-        products={products}
-        onPlaceOrder={handlePlaceOrder}
-      />
 
     </div>
   );

@@ -5,19 +5,22 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Coffee, 
-  Snowflake, 
-  Croissant, 
-  Leaf, 
+import React, { useRef, useState } from 'react';
+import {
+  Coffee,
+  Snowflake,
+  Croissant,
+  Leaf,
   Plus,
   Trash2,
   PlusCircle,
   X,
-  Sparkles
+  Sparkles,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { Category } from '../types';
+import { api } from '../lib/api';
 
 interface CategoriesViewProps {
   categories: Category[];
@@ -29,6 +32,34 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatImage, setNewCatImage] = useState('');
+
+  // Image upload (POST /api/upload) — categories can use their own image, not just presets.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedFilename, setUploadedFilename] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { url, filename } = await api.uploadImage(file);
+      if (url) {
+        if (uploadedFilename) api.deleteUpload(uploadedFilename).catch(() => {});
+        setNewCatImage(url);
+        setUploadedFilename(filename ?? null);
+      } else {
+        setUploadError('Upload succeeded but no URL was returned.');
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Icon mapping helpers
   const renderCategoryIcon = (iconName: string) => {
@@ -64,7 +95,15 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
 
     setNewCatName('');
     setNewCatImage('');
+    setUploadedFilename(null);
+    setUploadError(null);
     setShowAddModal(false);
+  };
+
+  // Close the modal and clear any in-progress upload state.
+  const closeModal = () => {
+    setShowAddModal(false);
+    setUploadError(null);
   };
 
   return (
@@ -102,7 +141,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold text-primary mb-1 tracking-tight">{cat.name}</h3>
+              <h3 className="text-xl font-bold text-primary mb-1 tracking-tight uppercase">{cat.name}</h3>
               <p className="text-xs text-secondary font-medium mb-4">{cat.itemsCount} items listed</p>
             </div>
 
@@ -145,7 +184,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
         <div className="fixed inset-0 bg-primary/25 backdrop-blur-[2px] flex items-center justify-center z-50 animate-fade-in p-4">
           <div className="bg-surface-container-lowest border border-outline-variant/45 shadow-lg rounded-2xl w-full max-w-md p-6 relative animate-scale-up text-left">
             <button 
-              onClick={() => setShowAddModal(false)}
+              onClick={closeModal}
               className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
             >
               <X className="w-4 h-4" />
@@ -170,7 +209,35 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Choose Visual Theme</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Choose Visual Theme</label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="text-[11px] font-bold text-primary flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                    {uploading ? 'Uploading…' : 'Upload image'}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+                {uploadError && <p className="text-[10px] font-semibold text-error">{uploadError}</p>}
+
+                {/* Selected image preview (preset or uploaded) */}
+                {newCatImage && (
+                  <div className="relative rounded-xl overflow-hidden h-24 border-2 border-primary shadow-sm mt-1.5">
+                    <img src={newCatImage} className="w-full h-full object-cover" alt="Selected" referrerPolicy="no-referrer" />
+                    <span className="absolute top-1.5 left-1.5 bg-primary text-on-primary text-[9px] font-bold px-2 py-0.5 rounded-full">Selected</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 mt-1.5 overflow-y-auto max-h-[160px] p-0.5">
                   {COFFEE_MOCK_IMAGES.map((img, i) => (
                     <button
@@ -199,7 +266,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
                 </button>
                 <button 
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={closeModal}
                   className="flex-1 bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs py-3 rounded-xl transition-all cursor-pointer"
                 >
                   Cancel

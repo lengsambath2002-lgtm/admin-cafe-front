@@ -46,6 +46,8 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Filename this session uploaded — so we can delete it if it gets replaced.
+  const [uploadedFilename, setUploadedFilename] = useState<string | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,9 +55,15 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
     setUploadError(null);
     setUploading(true);
     try {
-      const { url } = await api.uploadImage(file);
-      if (url) setImage(url);
-      else setUploadError('Upload succeeded but no URL was returned.');
+      const { url, filename } = await api.uploadImage(file);
+      if (url) {
+        // Remove the file we uploaded earlier in this session (avoid orphans).
+        if (uploadedFilename) api.deleteUpload(uploadedFilename).catch(() => {});
+        setImage(url);
+        setUploadedFilename(filename ?? null);
+      } else {
+        setUploadError('Upload succeeded but no URL was returned.');
+      }
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Upload failed.');
     } finally {
@@ -67,6 +75,8 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
 
   // Load editing product factors if in edit mode
   useEffect(() => {
+    // Switching products clears any session-upload association.
+    setUploadedFilename(null);
     if (editingProduct) {
       setName(editingProduct.name);
       setCategory(editingProduct.category);
@@ -80,7 +90,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
       setPrice('');
       setStock('');
       setDescription('');
-      setImage(PRESET_PRODUCT_PHOTOS[0].url);
+      setImage('');
     }
   }, [editingProduct]);
 
@@ -215,7 +225,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
             {/* Predefined visual options select */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Set Menu Photo</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Product Image</label>
 
                 {/* Upload your own image */}
                 <input
@@ -240,30 +250,22 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
                 <p className="text-[11px] font-semibold text-red-600">{uploadError}</p>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {/* Show the uploaded image as a selectable tile if it isn't one of the presets */}
-                {image && !PRESET_PRODUCT_PHOTOS.some(p => p.url === image) && (
-                  <div className="relative rounded-xl overflow-hidden h-16 border-2 border-primary ring-1 ring-primary shadow-sm scale-[0.98]">
-                    <img src={image} alt="Uploaded" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-1">
-                      <span className="text-[8px] font-bold text-white text-center leading-none">Uploaded</span>
-                    </div>
-                  </div>
-                )}
-                {PRESET_PRODUCT_PHOTOS.map((photo, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setImage(photo.url)}
-                    className={`relative rounded-xl overflow-hidden h-16 border-2 transition-all ${image === photo.url ? 'border-primary ring-1 ring-primary shadow-sm scale-[0.98]' : 'border-transparent opacity-80 hover:opacity-100 shadow-sm'}`}
-                  >
-                    <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-1">
-                      <span className="text-[8px] font-bold text-white text-center line-clamp-2 leading-none">{photo.name}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {/* Current product image preview (uploaded). No preset themes. */}
+              {image ? (
+                <div className="relative rounded-xl overflow-hidden h-32 border border-outline-variant/30 shadow-sm">
+                  <img src={image} alt="Product" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full h-32 rounded-xl border-2 border-dashed border-outline-variant/50 flex flex-col items-center justify-center gap-2 text-on-surface-variant hover:border-primary hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Upload className="w-5 h-5" />
+                  <span className="text-xs font-semibold">{uploading ? 'Uploading…' : 'Upload a product image'}</span>
+                </button>
+              )}
             </div>
 
             {/* Submitting Bar */}

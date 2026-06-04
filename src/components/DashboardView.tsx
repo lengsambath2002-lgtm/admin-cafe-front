@@ -93,7 +93,7 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Daily Revenue Card */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all hover:shadow-bento-raised duration-300">
+        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Daily Revenue</p>
@@ -115,7 +115,7 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
         </div>
 
         {/* Total Orders Card */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all hover:shadow-bento-raised duration-300">
+        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Total Orders</p>
@@ -135,7 +135,7 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
         </div>
 
         {/* Top Selling Beverage Card */}
-        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all hover:shadow-bento-raised duration-300 relative overflow-hidden">
+        <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5 relative overflow-hidden">
           <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Top Selling Drink</p>
@@ -180,8 +180,9 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
           </div>
         </div>
 
-        {/* Dynamic Interactive Bar Graph — driven by /api/reports/revenue-series */}
-        <div className={`relative h-64 w-full flex items-end justify-between pt-8 px-2 ${chartMode === 'weekly' ? 'gap-4' : 'gap-2 md:gap-4'}`}>
+        {/* Dynamic Interactive Bar Graph — driven by /api/reports/revenue-series.
+            Each bar is a DIRECT child of this fixed-height row so its height % resolves. */}
+        <div className={`relative h-64 w-full flex items-end justify-between pt-10 pb-7 px-2 ${chartMode === 'weekly' ? 'gap-3 md:gap-4' : 'gap-1 md:gap-1.5'}`}>
           {points.length === 0 ? (
             <div className="w-full h-full flex items-center justify-center text-xs text-on-surface-variant/50">
               No revenue data for this period.
@@ -193,25 +194,23 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
               return (
                 <div
                   key={`${point.date}-${point.label}`}
-                  className="flex-1 flex flex-col items-center gap-3 group cursor-pointer relative z-10"
+                  className={`relative flex-1 ${isWeekly ? 'rounded-t-lg' : 'rounded-t-md'} transition-all duration-500 ease-out cursor-pointer group ${
+                    point.isPeak
+                      ? 'bg-primary shadow-md shadow-primary/10'
+                      : 'bg-secondary-container hover:bg-tertiary-container'
+                  }`}
+                  style={{ height: `${heightPercent}%` }}
                   onMouseEnter={() => setHoveredBar(index)}
                   onMouseLeave={() => setHoveredBar(null)}
                 >
                   {/* Popover Tooltip */}
                   {hoveredBar === index && (
-                    <div className="absolute -top-10 bg-primary text-white text-[11px] font-bold px-2 py-1 rounded shadow-md z-20 transition-all whitespace-nowrap">
+                    <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-primary text-white text-[11px] font-bold px-2 py-1 rounded shadow-md z-20 whitespace-nowrap">
                       ${point.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   )}
-                  <div
-                    className={`w-full ${isWeekly ? 'max-w-[56px] rounded-t-lg' : 'max-w-[20px] rounded-t-md'} transition-all duration-500 ease-out ${
-                      point.isPeak
-                        ? 'bg-primary shadow-md shadow-primary/10'
-                        : 'bg-secondary-container hover:bg-tertiary-container hover:shadow'
-                    }`}
-                    style={{ height: `${heightPercent}%` }}
-                  />
-                  <span className={`${isWeekly ? 'text-[11px]' : 'text-[9px] hidden md:block'} font-semibold ${point.isPeak ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>
+                  {/* Bar label, pinned just below the baseline */}
+                  <span className={`absolute -bottom-6 left-1/2 -translate-x-1/2 ${isWeekly ? 'text-[11px]' : 'text-[9px] hidden md:block'} font-semibold whitespace-nowrap ${point.isPeak ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>
                     {point.label}
                   </span>
                 </div>
@@ -272,10 +271,14 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
         </div>
 
         {/* Prediction Insights bento box widget */}
-        <div className="col-span-12 lg:col-span-4 bg-tertiary-container text-on-tertiary-container p-6 rounded-2xl shadow-bento border border-primary-container/25 flex flex-col justify-between text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-container/50 via-primary-container to-primary-container/90">
-          <div>
+        <div className="col-span-12 lg:col-span-4 relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary-container text-white p-6 rounded-2xl shadow-bento border border-primary-container/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised">
+          {/* Subtle watermark for depth */}
+          <div className="absolute -right-8 -top-8 opacity-[0.06] rotate-12 pointer-events-none">
+            <Sparkles className="w-40 h-40 text-white" />
+          </div>
+          <div className="relative z-10">
             <div className="p-3 bg-white/10 rounded-xl w-fit mb-4">
-              <Sparkles className="w-6 h-6 text-white/70 animate-pulse" />
+              <Sparkles className="w-6 h-6 text-white/80 animate-pulse" />
             </div>
             <h3 className="text-lg font-bold text-white tracking-tight mb-2">Busiest Hour Predicted</h3>
             <p className="text-xs text-white/75 leading-relaxed">
@@ -283,7 +286,7 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
             </p>
           </div>
 
-          <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
+          <div className="relative z-10 mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
             <div className="flex justify-between items-center mb-2.5">
               <span className="text-[11px] uppercase font-bold tracking-wider text-white/60">Staff Readiness</span>
               <span className="text-xs font-bold text-white">85% (High)</span>

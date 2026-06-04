@@ -282,7 +282,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
               <p className="text-on-surface-variant font-semibold text-sm">No products in this category.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {sections.flatMap((section) => section.items).map((product) => {
                 const isOutOfStock = product.stock <= 0;
                 const inOrderQty = orderList
@@ -294,9 +294,9 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                     type="button"
                     disabled={isOutOfStock}
                     onClick={() => addProductToOrder(product)}
-                    className="group relative text-left rounded-2xl border border-outline-variant/25 overflow-hidden bg-surface-container-lowest shadow-bento hover:shadow-bento-raised transition-all duration-300 active:scale-[0.98] cursor-pointer hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50 flex flex-col"
+                    className="group relative text-left rounded-2xl border border-outline-variant/30 overflow-hidden bg-surface-container-lowest shadow-bento hover:shadow-bento-raised transition-all duration-300 active:scale-[0.98] cursor-pointer hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50 flex flex-col"
                   >
-                    <div className="h-36 overflow-hidden relative">
+                    <div className="aspect-[4/3] bg-surface-container-low overflow-hidden relative">
                       <img
                         src={product.imageUrl || product.image}
                         alt={product.name}
@@ -305,27 +305,27 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                       />
                       {/* Add affordance */}
                       {!isOutOfStock && (
-                        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
                           <Plus className="w-4 h-4" />
                         </div>
                       )}
                       {/* Count badge when already in the order list */}
                       {inOrderQty > 0 && (
-                        <div className="absolute top-3 left-3 min-w-[24px] h-6 px-2 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md text-[11px] font-bold">
+                        <div className="absolute top-2 left-2 min-w-[22px] h-6 px-1.5 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md text-[11px] font-bold">
                           {inOrderQty}
                         </div>
                       )}
                       {isOutOfStock && (
                         <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
-                          <span className="bg-error text-on-error px-3 py-1.5 rounded-lg font-bold text-[11px] tracking-wide">
+                          <span className="bg-error text-on-error px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide">
                             Out of Stock
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="p-4 flex items-start justify-between gap-2">
-                      <p className="text-sm font-bold text-primary leading-tight line-clamp-2">{product.name}</p>
-                      <span className="text-sm font-extrabold text-secondary shrink-0">${product.price.toFixed(2)}</span>
+                    <div className="p-3 flex items-center justify-between gap-2">
+                      <p className="text-[13px] font-bold text-primary leading-tight line-clamp-1">{product.name}</p>
+                      <span className="text-[13px] font-extrabold text-secondary shrink-0">${product.price.toFixed(2)}</span>
                     </div>
                   </button>
                 );

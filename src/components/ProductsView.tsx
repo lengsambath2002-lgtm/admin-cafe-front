@@ -117,34 +117,33 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
 
       {/* Render Product views based on layouts selection */}
       {viewStyle === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+
           {filteredProducts.map((product) => {
             const isOutOfStock = product.stock <= 0;
             return (
-              <div 
+              <div
                 key={product.id}
-                className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/25 overflow-hidden shadow-bento hover:shadow-bento-raised transition-all duration-300 relative flex flex-col justify-between"
+                className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden shadow-bento hover:shadow-bento-raised transition-all duration-300 flex flex-col"
               >
                 {/* Media frame */}
-                <div className="h-52 overflow-hidden relative">
-                  <img 
-                    src={product.imageUrl || product.image} 
+                <div className="aspect-[4/3] bg-surface-container-low overflow-hidden relative">
+                  <img
+                    src={product.imageUrl || product.image}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                     referrerPolicy="no-referrer"
                   />
                   {/* Category tag */}
-                  <div className="absolute top-3.5 right-3.5">
-                    <span className="bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1 rounded-full text-primary font-bold text-[10px] uppercase tracking-wider shadow-sm border border-outline-variant/15">
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className="bg-surface-container-lowest/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-primary font-bold text-[9px] uppercase tracking-wider shadow-sm border border-outline-variant/15">
                       {getCategoryLabel(product.category)}
                     </span>
                   </div>
 
-                  {/* Glassmorphic out-of-stock overlay (Screen 6 visual) */}
                   {isOutOfStock && (
-                    <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center animate-fade-in">
-                      <span className="bg-error text-on-error px-4 py-2 rounded-xl font-bold text-xs tracking-wider shadow-lg transform scale-100 hover:scale-102 transition-transform">
+                    <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+                      <span className="bg-error text-on-error px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide shadow-lg">
                         Out of Stock
                       </span>
                     </div>
@@ -152,49 +151,47 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                 </div>
 
                 {/* Info and action panel */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1.5 text-left mb-6">
-                    <div className="flex justify-between items-start gap-2">
-                      <h3 className="font-bold text-lg text-primary leading-tight group-hover:text-primary-container transition-colors">
-                        {product.name}
-                      </h3>
-                      <span className="font-extrabold text-secondary shrink-0 text-base">
-                        ${product.price.toFixed(2)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
-                      {product.description}
-                    </p>
+                <div className="p-3.5 flex flex-col gap-2 flex-1">
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="font-bold text-sm text-primary leading-tight line-clamp-1 group-hover:text-primary-container transition-colors">
+                      {product.name}
+                    </h3>
+                    <span className="font-extrabold text-secondary shrink-0 text-sm">
+                      ${product.price.toFixed(2)}
+                    </span>
                   </div>
+                  <p className="text-[11px] text-on-surface-variant line-clamp-1 leading-relaxed">
+                    {product.description}
+                  </p>
 
-                  <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4 mt-auto">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${
+                  <div className="flex items-center justify-between border-t border-outline-variant/10 pt-2.5 mt-auto">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${
                         isOutOfStock
                           ? 'bg-red-500 animate-pulse'
                           : product.stock < 15
                             ? 'bg-amber-500'
                             : 'bg-green-500'
                       }`} />
-                      <span className="text-xs font-semibold text-on-surface-variant">
+                      <span className="text-[11px] font-semibold text-on-surface-variant">
                         {isOutOfStock ? '0 in stock' : `${product.stock} in stock`}
                       </span>
                     </div>
 
-                    <div className="flex gap-1">
-                      <button 
+                    <div className="flex gap-0.5">
+                      <button
                         onClick={() => onEditProduct(product)}
-                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary-container/60 transition-colors text-primary cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary-container/60 transition-colors text-primary cursor-pointer"
                         title="Edit Product"
                       >
-                        <Edit3 className="w-4 h-4" />
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDeleteProduct(product.id)}
-                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-neutral-200 transition-colors text-neutral-500 hover:text-neutral-900 cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-200 transition-colors text-neutral-500 hover:text-neutral-900 cursor-pointer"
                         title="Delete Product"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -203,16 +200,16 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             );
           })}
 
-          {/* Dotted Add New Item shortcut (Screen 6) */}
-          <button 
+          {/* Dotted Add New Item shortcut */}
+          <button
             onClick={() => onNavigate('register_product')}
-            className="group border-2 border-dashed border-outline-variant rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary hover:bg-primary/5 transition-all duration-300 min-h-[350px] cursor-pointer"
+            className="group border-2 border-dashed border-outline-variant/60 rounded-2xl flex flex-col items-center justify-center p-6 min-h-[200px] hover:border-primary hover:bg-primary/5 transition-all duration-300 cursor-pointer"
           >
-            <div className="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform group-hover:bg-primary-container">
-              <Plus className="w-6 h-6 text-primary group-hover:text-on-primary animate-pulse" />
+            <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3 group-hover:scale-110 transition-transform group-hover:bg-primary-container">
+              <Plus className="w-5 h-5 text-primary group-hover:text-on-primary" />
             </div>
-            <p className="font-bold text-lg text-primary tracking-tight">Add New Item</p>
-            <p className="text-xs text-on-surface-variant mt-2 max-w-[200px] text-center">Create a new premium catalog listing for your menu.</p>
+            <p className="font-bold text-sm text-primary tracking-tight">Add New Item</p>
+            <p className="text-[11px] text-on-surface-variant mt-1 max-w-[180px] text-center">Create a new catalog listing.</p>
           </button>
         </div>
       ) : (

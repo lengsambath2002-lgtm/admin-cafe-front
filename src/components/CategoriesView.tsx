@@ -117,56 +117,53 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
         </div>
       </div>
 
-      {/* Grid of Categories (Screen 2) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid of Categories */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {categories.map((cat) => (
-          <div 
+          <div
             key={cat.id}
-            className="bg-surface-container-lowest p-5 rounded-2xl border border-secondary-container shadow-bento hover:shadow-bento-raised transition-all group relative overflow-hidden flex flex-col justify-between"
+            className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-bento hover:shadow-bento-raised transition-all duration-300 overflow-hidden flex flex-col"
           >
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-secondary-container rounded-xl">
-                  {renderCategoryIcon(cat.icon)}
-                </div>
-                
-                {/* Visual Actions buttons list */}
-                <div className="flex gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => onDeleteCategory(cat.id)}
-                    className="p-2 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 rounded-full transition-colors material-symbols-outlined cursor-pointer border border-outline-variant/10 bg-white shadow-sm"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold text-primary mb-1 tracking-tight uppercase">{cat.name}</h3>
-              <p className="text-xs text-secondary font-medium mb-4">{cat.itemsCount} items listed</p>
-            </div>
-
-            {/* Visual Frame */}
-            <div className="w-full h-36 rounded-xl bg-surface-container-low overflow-hidden mt-2 relative border border-outline-variant/15">
-              <img 
-                src={cat.image} 
+            {/* Image */}
+            <div className="aspect-[4/3] bg-surface-container-low overflow-hidden relative">
+              <img
+                src={cat.image}
                 alt={cat.name}
-                className="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0 group-hover:scale-103 transition-all duration-500 ease-out"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 referrerPolicy="no-referrer"
               />
+              <button
+                onClick={() => onDeleteCategory(cat.id)}
+                className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/15 shadow-sm flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-white transition-colors cursor-pointer"
+                title="Delete Category"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Info */}
+            <div className="p-3.5 flex items-center gap-3">
+              <div className="p-2 bg-secondary-container rounded-lg shrink-0">
+                {renderCategoryIcon(cat.icon)}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-primary leading-tight tracking-tight uppercase truncate">{cat.name}</h3>
+                <p className="text-[11px] text-secondary font-medium">{cat.itemsCount} items</p>
+              </div>
             </div>
           </div>
         ))}
 
         {/* Add Category Dotted interactive block */}
-        <button 
+        <button
           onClick={() => setShowAddModal(true)}
-          className="border-2 border-dashed border-outline-variant/65 rounded-2xl flex flex-col items-center justify-center p-6 min-h-[290px] bg-surface-container-low/45 hover:bg-surface-container-low/55 transition-colors group active:scale-[0.98] cursor-pointer"
+          className="border-2 border-dashed border-outline-variant/60 rounded-2xl flex flex-col items-center justify-center p-6 min-h-[200px] bg-surface-container-low/45 hover:border-primary hover:bg-primary/5 transition-all duration-300 group active:scale-[0.98] cursor-pointer"
         >
-          <div className="p-4 bg-surface-container-high rounded-full mb-4 group-hover:bg-primary transition-all duration-300">
-            <Plus className="w-7 h-7 text-primary group-hover:text-white transition-colors" />
+          <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-3 group-hover:bg-primary-container group-hover:scale-110 transition-all duration-300">
+            <Plus className="w-5 h-5 text-primary group-hover:text-on-primary transition-colors" />
           </div>
-          <span className="font-bold text-lg text-primary tracking-tight">Add Category</span>
-          <span className="text-xs text-secondary text-center mt-2 max-w-[200px]">Create a new premium directory for menu items.</span>
+          <span className="font-bold text-sm text-primary tracking-tight">Add Category</span>
+          <span className="text-[11px] text-secondary text-center mt-1 max-w-[180px]">Create a new menu directory.</span>
         </button>
       </div>
 

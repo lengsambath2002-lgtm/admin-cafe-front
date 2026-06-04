@@ -18,6 +18,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { Product, Category } from '../types';
+import { onImageError } from '../lib/img';
 
 interface ProductsViewProps {
   products: Product[];
@@ -132,6 +133,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                     alt={product.name}
                     className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out ${locked ? 'grayscale opacity-60' : ''}`}
                     referrerPolicy="no-referrer"
+                    onError={onImageError}
                   />
                   {/* Category tag */}
                   <div className="absolute top-2.5 right-2.5">
@@ -234,6 +236,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                           alt={product.name}
                           className={`w-12 h-12 rounded-lg object-cover shrink-0 border border-outline-variant/20 ${locked ? 'grayscale opacity-60' : ''}`}
                           referrerPolicy="no-referrer"
+                          onError={onImageError}
                         />
                         <p className="text-sm font-bold text-primary">{product.name}</p>
                       </div>

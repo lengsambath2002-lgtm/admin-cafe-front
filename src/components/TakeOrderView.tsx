@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Product, Category, Order, OrderItem } from '../types';
+import { onImageError } from '../lib/img';
 
 // A line in the order list — carries its own customization so the admin can
 // tweak sugar / size / qty / notes after adding it.
@@ -302,6 +303,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         referrerPolicy="no-referrer"
+                        onError={onImageError}
                       />
                       {/* Add affordance */}
                       {!locked && (

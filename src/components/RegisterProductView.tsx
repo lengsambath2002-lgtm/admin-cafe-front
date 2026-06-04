@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Product, Category } from '../types';
 import { api } from '../lib/api';
+import { onImageError } from '../lib/img';
 
 interface RegisterProductViewProps {
   categories: Category[];
@@ -218,7 +219,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
               {/* Current product image preview (uploaded). No preset themes. */}
               {image ? (
                 <div className="relative rounded-xl overflow-hidden h-32 border border-outline-variant/30 shadow-sm">
-                  <img src={image} alt="Product" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={image} alt="Product" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={onImageError} />
                 </div>
               ) : (
                 <button
@@ -267,7 +268,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
             <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/25 flex shadow-sm hover:shadow-md transition-all">
               <div className="w-24 h-24 bg-surface-container-low flex items-center justify-center shrink-0">
                 {image ? (
-                  <img src={image} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                  <img src={image} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" onError={onImageError} />
                 ) : (
                   <ImageIcon className="w-7 h-7 text-outline-variant" />
                 )}

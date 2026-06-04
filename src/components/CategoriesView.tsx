@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Category } from '../types';
 import { api } from '../lib/api';
+import { onImageError } from '../lib/img';
 
 interface CategoriesViewProps {
   categories: Category[];
@@ -131,6 +132,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
                 alt={cat.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 referrerPolicy="no-referrer"
+                onError={onImageError}
               />
               <button
                 onClick={() => onDeleteCategory(cat.id)}

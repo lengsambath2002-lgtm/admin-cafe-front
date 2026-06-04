@@ -821,7 +821,8 @@ export default function App() {
       {!isGuest && (
       <nav className="md:hidden fixed bottom-0 left-0 w-full z-45 flex justify-around items-center px-4 py-3 pb-safe bg-surface border-t border-outline-variant/35 shadow-bento rounded-t-2xl">
         {[
-          { id: 'orders', label: 'Orders', icon: ShoppingCart },
+          { id: 'orders', label: 'Take', icon: ShoppingCart },
+          { id: 'order-list', label: 'Orders', icon: ClipboardList },
           { id: 'products', label: 'Products', icon: Boxes },
           { id: 'categories', label: 'Menu', icon: Tags },
           { id: 'dashboard', label: 'Reports', icon: BarChart3 }, // "Reports" icon and bottom nav naming matches Screen 1
@@ -845,13 +846,20 @@ export default function App() {
                 }
                 setEditingProduct(null);
               }}
-              className={`flex flex-col items-center justify-center px-3.5 py-1 transition-all rounded-full active:scale-90 ${
+              className={`flex flex-col items-center justify-center px-2.5 py-1 transition-all rounded-full active:scale-90 ${
                 highlight
                   ? 'bg-secondary-container text-primary font-bold shadow-xs'
                   : 'text-on-surface-variant/80 hover:text-primary'
               }`}
             >
-              <IconComp className="w-5 h-5" />
+              <span className="relative">
+                <IconComp className="w-5 h-5" />
+                {item.id === 'order-list' && newOrderCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-blue-600 text-white text-[8px] font-bold flex items-center justify-center leading-none">
+                    {newOrderCount}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px] font-semibold mt-1">{item.label}</span>
             </button>
           );

@@ -224,7 +224,7 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Recent Activity/Transactions table widget */}
-        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between">
+        <div className="col-span-12 bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-primary tracking-tight">Recent Large Transactions</h3>
@@ -270,33 +270,6 @@ export default function DashboardView({ orders, transactions, onNavigate, onSele
           </div>
         </div>
 
-        {/* Prediction Insights bento box widget */}
-        <div className="col-span-12 lg:col-span-4 relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary-container text-white p-6 rounded-2xl shadow-bento border border-primary-container/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised">
-          {/* Subtle watermark for depth */}
-          <div className="absolute -right-8 -top-8 opacity-[0.06] rotate-12 pointer-events-none">
-            <Sparkles className="w-40 h-40 text-white" />
-          </div>
-          <div className="relative z-10">
-            <div className="p-3 bg-white/10 rounded-xl w-fit mb-4">
-              <Sparkles className="w-6 h-6 text-white/80 animate-pulse" />
-            </div>
-            <h3 className="text-lg font-bold text-white tracking-tight mb-2">Busiest Hour Predicted</h3>
-            <p className="text-xs text-white/75 leading-relaxed">
-              Based on last week's traffic and transaction density, your busiest shift today will be <strong className="text-white">1:00 PM – 2:30 PM</strong>. Ensure both espresso machines are fully calibrated and milk is restocked.
-            </p>
-          </div>
-
-          <div className="relative z-10 mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
-            <div className="flex justify-between items-center mb-2.5">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-white/60">Staff Readiness</span>
-              <span className="text-xs font-bold text-white">85% (High)</span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-              <div className="bg-white/80 h-full w-[85%] rounded-full transition-all duration-1000" />
-            </div>
-          </div>
-        </div>
-        
       </div>
     </div>
   );

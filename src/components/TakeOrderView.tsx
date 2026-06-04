@@ -12,7 +12,6 @@ import {
   Trash2,
   Coffee,
   ClipboardList,
-  Search,
   ChevronDown,
   ChevronUp,
   CheckCircle,
@@ -107,37 +106,30 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
   const [advancingId, setAdvancingId] = useState<string | null>(null);
 
   // Menu browser state
-  const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
 
   // Does a product belong to the given category record?
   const belongsTo = (p: Product, cat: Category) =>
     p.category === cat.id || p.category.toLowerCase() === cat.name.toLowerCase();
 
-  // Group the (search-filtered) catalog into category sections, in category order.
+  // Group the catalog into category sections, in category order.
   const sections = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const searchMatch = (p: Product) =>
-      !q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
-
-    const matched = products.filter(searchMatch);
-
     const groups = categories
       .map((cat) => ({
         key: cat.id,
         label: cat.name,
-        items: matched.filter((p) => belongsTo(p, cat))
+        items: products.filter((p) => belongsTo(p, cat))
       }))
       .filter((g) => g.items.length > 0);
 
     // Products whose category id matches no Category record fall under "Other".
-    const orphans = matched.filter((p) => !categories.some((c) => belongsTo(p, c)));
+    const orphans = products.filter((p) => !categories.some((c) => belongsTo(p, c)));
     if (orphans.length > 0) {
       groups.push({ key: '__other__', label: 'Other', items: orphans });
     }
 
     return categoryFilter === 'All' ? groups : groups.filter((g) => g.key === categoryFilter);
-  }, [products, categories, searchQuery, categoryFilter]);
+  }, [products, categories, categoryFilter]);
 
   // Clear the builder back to a blank ticket.
   const resetBuilder = () => {
@@ -243,64 +235,51 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
     <div className="space-y-6 animate-fade-in">
 
       {/* Page header — matches the Products catalog layout */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h2 className="text-3xl font-bold text-primary tracking-tight">Take Order</h2>
-          <p className="text-secondary text-base mt-1">Tap a product to add it, customize each line, then place the order.</p>
-        </div>
+      <div>
+        <h2 className="text-3xl font-bold text-primary tracking-tight">Take Order</h2>
+        <p className="text-secondary text-base mt-1">Tap a product to add it, customize each line, then place the order.</p>
+      </div>
 
-        {/* Menu search */}
-        <div className="relative w-full lg:w-80">
-          <Search className="w-4 h-4 text-on-surface-variant/50 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search the menu..."
-            className="w-full bg-surface-container-low text-sm pl-10 pr-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-          />
-        </div>
+      {/* Category chips — full width, above both columns */}
+      <div className="flex gap-2.5 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setCategoryFilter('All')}
+          className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
+            categoryFilter === 'All'
+              ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
+              : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
+          }`}
+        >
+          All
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => setCategoryFilter(cat.id)}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
+              categoryFilter === cat.id
+                ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
+                : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
+            }`}
+          >
+            {cat.name}
+          </button>
+        ))}
       </div>
 
       {/* Body: product menu (left) + order panel (right) */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
 
         {/* ── Left: product menu, grouped by category ──────────── */}
-        <div className="flex-1 w-full space-y-6">
-          {/* Category chips */}
-          <div className="flex gap-2.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setCategoryFilter('All')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
-                categoryFilter === 'All'
-                  ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
-                  : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
-              }`}
-            >
-              All
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoryFilter(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
-                  categoryFilter === cat.id
-                    ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
-                    : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+        <div className="flex-1 w-full">
 
           {/* Category sections */}
           {sections.length === 0 ? (
             <div className="text-center py-20 bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-bento">
               <Coffee className="w-10 h-10 text-on-surface-variant/35 mx-auto mb-3" />
-              <p className="text-on-surface-variant font-semibold text-sm">No products match your search.</p>
+              <p className="text-on-surface-variant font-semibold text-sm">No products in this category.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -355,12 +334,14 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
           )}
         </div>
 
-        {/* ── Right: order panel — sticky card matching the catalog cards ── */}
+        {/* ── Right: order panel — only shown when there's an order being built or orders to list ── */}
+        {(orderList.length > 0 || (showOrderHistory && orders.length > 0)) && (
         <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-6">
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-bento overflow-hidden">
             {/* New-order builder card, then existing order cards */}
             <div className="lg:max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-thin p-4 space-y-4">
-            {/* ===== New Order builder card ===== */}
+            {/* ===== New Order — appears once a product is added ===== */}
+            {orderList.length > 0 && (
             <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low/40 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center gap-2 px-4 pt-4">
@@ -590,6 +571,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                 </button>
                 </div>
             </div>
+            )}
 
             {/* ===== Existing orders — expand a card to view items and advance status ===== */}
             {showOrderHistory && orders.length > 0 && (
@@ -685,6 +667,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

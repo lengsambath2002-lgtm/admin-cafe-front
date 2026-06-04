@@ -18,7 +18,8 @@ import {
   X,
   Plus,
   LogOut,
-  LogIn
+  LogIn,
+  HelpCircle
 } from 'lucide-react';
 
 import { Category, Product, Order, Transaction } from '../types';
@@ -165,6 +166,9 @@ export default function App() {
   // Mobile sidebar drawer helper
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // How-to guide modal
+  const [showHelp, setShowHelp] = useState(false);
+
   // Jump to the Orders (Take Order) screen — used by header / dashboard shortcuts.
   const goToTakeOrder = () => {
     setActiveTab('orders');
@@ -308,7 +312,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row relative">
 
-      {/* Mobile AppBar top view (Screen 1 matched headers layout) */}
+      {/* Chrome (mobile header, drawer, sidebar, bottom nav) is hidden for guests
+          — they get a clean, full-width Take Order page. */}
+      {!isGuest && (
       <header className="md:hidden w-full top-0 sticky bg-surface border-b border-outline-variant/35 z-40 flex justify-between items-center px-4 h-16 shadow-xs shrink-0">
         <div className="flex items-center gap-2.5">
           <Coffee className="w-6 h-6 text-primary" />
@@ -330,6 +336,7 @@ export default function App() {
           </button>
         </div>
       </header>
+      )}
 
       {/* Mobile Drawer menu sidebar fallback */}
       {mobileMenuOpen && (
@@ -374,6 +381,7 @@ export default function App() {
       )}
 
       {/* Desktop/Tablet persistent left SideNavBar (spec styled) */}
+      {!isGuest && (
       <aside className="hidden md:flex fixed left-0 top-0 h-full flex-col py-8 bg-surface border-r border-outline-variant w-[280px] shrink-0 z-25 text-left justify-between">
         <div>
           {/* Brand Header */}
@@ -427,9 +435,134 @@ export default function App() {
           </div>
         </div>
       </aside>
+      )}
+
+      {/* Top-right controls: Help (everyone) + Admin Login (guests, who have no sidebar). */}
+      <div className="fixed top-5 right-6 z-40 flex items-center gap-2">
+        {isGuest && (
+          <button
+            onClick={goToAdminLogin}
+            className="flex items-center gap-1.5 bg-surface-container-lowest text-primary border border-outline-variant/50 hover:border-primary text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+            Admin Login
+          </button>
+        )}
+        <button
+          onClick={() => setShowHelp(true)}
+          title="How to use"
+          className="flex items-center gap-1.5 bg-surface-container-lowest text-primary border border-outline-variant/50 hover:border-primary text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all cursor-pointer"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Help
+        </button>
+      </div>
+
+      {/* How-to guide modal */}
+      {showHelp && (
+        <div className="fixed inset-0 bg-primary/25 backdrop-blur-[2px] flex items-center justify-center z-50 animate-fade-in p-4" onClick={() => setShowHelp(false)}>
+          <div
+            className="bg-surface-container-lowest border border-outline-variant/45 shadow-lg rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto scrollbar-thin p-6 relative animate-scale-up text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-on-surface-variant hover:text-primary cursor-pointer w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-1">
+              <HelpCircle className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-bold text-primary tracking-tight">How to use Brewmaster</h3>
+            </div>
+            <p className="text-xs text-on-surface-variant mb-5">A quick guide to taking orders and managing the café.</p>
+
+            <div className="space-y-4">
+              {[
+                {
+                  icon: ShoppingCart,
+                  title: 'Take an order',
+                  steps: [
+                    'Tap a product to add it to the order.',
+                    'Tap a line in the New Order panel to customize size, sugar, quantity and notes.',
+                    'Enter the table / customer and choose Dine-in or To-Go.',
+                    'Press Place Order.',
+                  ],
+                },
+                {
+                  icon: LayoutDashboard,
+                  title: 'Track orders (admin)',
+                  steps: [
+                    'Placed orders appear in the Orders list on the Take Order panel.',
+                    'Tap an order to view its items, then advance its status: New → Preparing → Ready → Complete.',
+                  ],
+                },
+                {
+                  icon: Boxes,
+                  title: 'Products (admin)',
+                  steps: [
+                    'Open Products, then tap Add Product (bottom-right).',
+                    'Fill in the details and upload a product image, then Save.',
+                    'Use the edit / delete icons on each card to manage items.',
+                  ],
+                },
+                {
+                  icon: Tags,
+                  title: 'Menu / categories (admin)',
+                  steps: [
+                    'Open Menu, then tap Add Category.',
+                    'Enter a name and pick or upload an image, then Create.',
+                  ],
+                },
+                {
+                  icon: BarChart3,
+                  title: 'Reports (admin)',
+                  steps: [
+                    'Open Reports and switch the range (Weekly / Monthly / Yearly).',
+                    'Tap Export CSV to download the figures.',
+                  ],
+                },
+                {
+                  icon: LogIn,
+                  title: 'Roles',
+                  steps: [
+                    'Guests can only take orders (no sidebar).',
+                    'Admins manage everything — use Admin Login to sign in, or Log out from the sidebar.',
+                  ],
+                },
+              ].map((section) => {
+                const SectionIcon = section.icon;
+                return (
+                  <div key={section.title} className="rounded-xl border border-outline-variant/25 bg-surface-container-low/30 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 bg-secondary-container/60 rounded-lg">
+                        <SectionIcon className="w-4 h-4 text-primary" />
+                      </div>
+                      <h4 className="text-sm font-bold text-primary">{section.title}</h4>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-on-surface-variant leading-relaxed marker:text-on-surface-variant/50">
+                      {section.steps.map((step, i) => (
+                        <li key={i}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-5 w-full bg-primary text-on-primary hover:bg-primary-container font-bold text-xs py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Pane wrapper */}
-      <main className="flex-1 md:ml-[280px] p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between">
+      <main className={`flex-1 ${isGuest ? '' : 'md:ml-[280px]'} p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between`}>
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -511,6 +644,7 @@ export default function App() {
       </main>
 
       {/* Mobile only compact Bottom navigation bar (Screen 1 style) */}
+      {!isGuest && (
       <nav className="md:hidden fixed bottom-0 left-0 w-full z-45 flex justify-around items-center px-4 py-3 pb-safe bg-surface border-t border-outline-variant/35 shadow-bento rounded-t-2xl">
         {[
           { id: 'orders', label: 'Orders', icon: ShoppingCart },
@@ -549,6 +683,7 @@ export default function App() {
           );
         })}
       </nav>
+      )}
 
     </div>
   );

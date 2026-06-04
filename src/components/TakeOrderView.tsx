@@ -15,7 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  ShoppingCart
 } from 'lucide-react';
 import { Product, Category, Order, OrderItem } from '../types';
 import { onImageError } from '../lib/img';
@@ -106,6 +107,9 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
   // The order currently having its status advanced — drives the per-card spinner.
   const [advancingId, setAdvancingId] = useState<string | null>(null);
 
+  // Mobile: the order panel collapses into a cart button that opens a bottom sheet.
+  const [cartOpen, setCartOpen] = useState(false);
+
   // Menu browser state
   const [categoryFilter, setCategoryFilter] = useState('All');
 
@@ -139,6 +143,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
     setIsTakeout(false);
     setOrderList([]);
     setExpandedId(null);
+    setCartOpen(false);
   };
 
   // Tapping a product adds it to the order list with sensible defaults.
@@ -336,12 +341,38 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
           )}
         </div>
 
-        {/* ── Right: order panel — only shown when there's an order being built or orders to list ── */}
+        {/* ── Right: order panel. Desktop = sticky column; mobile = cart button + slide-up sheet. ── */}
         {(orderList.length > 0 || (showOrderHistory && orders.length > 0)) && (
-        <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-6">
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-bento overflow-hidden">
+        <>
+          {/* Mobile cart button — tap to open the order */}
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="lg:hidden fixed bottom-24 right-5 z-40 flex items-center gap-2 bg-primary text-on-primary font-bold text-sm pl-4 pr-5 py-3 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer"
+          >
+            <span className="relative">
+              <ShoppingCart className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center">{itemCount}</span>
+              )}
+            </span>
+            ${total.toFixed(2)}
+          </button>
+
+          {/* Backdrop (mobile, sheet open) */}
+          {cartOpen && <div className="lg:hidden fixed inset-0 bg-primary/30 backdrop-blur-[1px] z-40" onClick={() => setCartOpen(false)} />}
+
+          <div className={`fixed inset-x-0 bottom-0 z-50 w-full transition-transform duration-300 ${cartOpen ? 'translate-y-0' : 'translate-y-full'} lg:sticky lg:top-6 lg:inset-auto lg:bottom-auto lg:w-[380px] lg:shrink-0 lg:translate-y-0 lg:transition-none lg:z-auto`}>
+          <div className="bg-surface-container-lowest rounded-t-2xl lg:rounded-2xl border border-outline-variant/25 shadow-bento overflow-hidden">
+            {/* Mobile sheet header */}
+            <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
+              <span className="text-sm font-bold text-primary">Your order</span>
+              <button type="button" onClick={() => setCartOpen(false)} className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant cursor-pointer">
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
             {/* New-order builder card, then existing order cards */}
-            <div className="lg:max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-thin p-4 space-y-4">
+            <div className="max-h-[72vh] lg:max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-thin p-4 space-y-4">
             {/* ===== New Order — appears once a product is added ===== */}
             {orderList.length > 0 && (
             <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low/40 overflow-hidden">
@@ -669,6 +700,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
             </div>
           </div>
         </div>
+        </>
         )}
       </div>
     </div>

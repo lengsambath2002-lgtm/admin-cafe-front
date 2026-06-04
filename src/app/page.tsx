@@ -14,7 +14,6 @@ import {
   Boxes,
   Tags,
   BarChart3,
-  Menu,
   X,
   Plus,
   LogOut,
@@ -189,8 +188,6 @@ export default function App() {
   }, [authChecked, isGuest]);
 
 
-  // Mobile sidebar drawer helper
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Desktop sidebar collapse (persisted).
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -398,61 +395,21 @@ export default function App() {
             Order
           </button>
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setShowHelp(true)}
+            title="How to use"
             className="p-2 rounded-full hover:bg-surface-container text-on-surface-variant cursor-pointer"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <HelpCircle className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="p-2 rounded-full hover:bg-surface-container text-on-surface-variant cursor-pointer"
+          >
+            <LogOut className="w-5 h-5" />
           </button>
         </div>
       </header>
-      )}
-
-      {/* Mobile Drawer menu sidebar fallback */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-16 bg-surface border-b border-outline-variant/45 z-30 flex flex-col p-4 space-y-2 text-left animate-slide-down">
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'orders', label: 'Take Order', icon: ShoppingCart },
-            { id: 'order-list', label: 'Orders List', icon: ClipboardList },
-            { id: 'products', label: 'Products', icon: Boxes },
-            { id: 'categories', label: 'Menu', icon: Tags },
-            { id: 'reports', label: 'Reports', icon: BarChart3 },
-          ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
-            const IconComp = item.icon;
-            const isSelected = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-xs leading-none text-left tracking-wide ${
-                  isSelected ? 'bg-primary text-white font-bold' : 'text-on-surface-variant/80 hover:bg-surface-container'
-                }`}
-              >
-                <IconComp className="w-4.5 h-4.5" />
-                {item.label}
-                {item.id === 'order-list' && newOrderCount > 0 && (
-                  <span className={`ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${isSelected ? 'bg-white text-primary' : 'bg-blue-600 text-white'}`}>
-                    {newOrderCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              if (isGuest) goToAdminLogin();
-              else handleLogout();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-xs leading-none text-left tracking-wide text-on-surface-variant/80 hover:bg-surface-container"
-          >
-            {isGuest ? <LogIn className="w-4.5 h-4.5" /> : <LogOut className="w-4.5 h-4.5" />}
-            {isGuest ? 'Admin Login' : 'Log out'}
-          </button>
-        </div>
       )}
 
       {/* Desktop/Tablet persistent left SideNavBar (collapsible) */}
@@ -544,8 +501,10 @@ export default function App() {
       </aside>
       )}
 
-      {/* Top-right controls: Help (everyone) + Admin Login (guests, who have no sidebar). */}
-      <div className="fixed top-5 right-6 z-40 flex items-center gap-2">
+      {/* Top-right controls: Help + Admin Login (guests). Guests have no header so
+          they show on all sizes; admins use the mobile header on small screens to
+          avoid overlapping it, so this floats on desktop only for them. */}
+      <div className={`fixed top-5 right-6 z-40 items-center gap-2 ${isGuest ? 'flex' : 'hidden md:flex'}`}>
         {isGuest && (
           <button
             onClick={goToAdminLogin}

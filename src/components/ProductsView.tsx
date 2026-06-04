@@ -6,15 +6,15 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Search, 
-  Grid3X3, 
-  List, 
+import {
+  Search,
+  Grid3X3,
+  List,
   Edit3,
   Plus,
   PlusCircle,
-  AlertTriangle,
-  RotateCw,
+  Lock,
+  Unlock,
   Trash2
 } from 'lucide-react';
 import { Product, Category } from '../types';
@@ -25,9 +25,10 @@ interface ProductsViewProps {
   onNavigate: (tab: string) => void;
   onEditProduct: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
+  onToggleLock: (product: Product) => void;
 }
 
-export default function ProductsView({ products, categories, onNavigate, onEditProduct, onDeleteProduct }: ProductsViewProps) {
+export default function ProductsView({ products, categories, onNavigate, onEditProduct, onDeleteProduct, onToggleLock }: ProductsViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,11 +40,9 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
 
   // Live filter catalog lists
   const filteredProducts = products.filter(p => {
-    const matchesSearch = 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesCategory = 
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
       selectedCategory === 'All' || 
       p.category === selectedCategory || 
       p.category.toLowerCase() === selectedCategory.toLowerCase().replace(' ', '_');
@@ -120,18 +119,18 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
           {filteredProducts.map((product) => {
-            const isOutOfStock = product.stock <= 0;
+            const locked = !!product.locked;
             return (
               <div
                 key={product.id}
-                className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden shadow-bento hover:shadow-bento-raised transition-all duration-300 flex flex-col"
+                className={`group bg-surface-container-lowest rounded-2xl border overflow-hidden shadow-bento hover:shadow-bento-raised transition-all duration-300 flex flex-col ${locked ? 'border-outline-variant/50' : 'border-outline-variant/30'}`}
               >
                 {/* Media frame */}
                 <div className="aspect-[4/3] bg-surface-container-low overflow-hidden relative">
                   <img
                     src={product.imageUrl || product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out ${locked ? 'grayscale opacity-60' : ''}`}
                     referrerPolicy="no-referrer"
                   />
                   {/* Category tag */}
@@ -141,10 +140,10 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                     </span>
                   </div>
 
-                  {isOutOfStock && (
-                    <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
-                      <span className="bg-error text-on-error px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide shadow-lg">
-                        Out of Stock
+                  {locked && (
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className="inline-flex items-center gap-1 bg-primary text-on-primary px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider shadow-sm">
+                        <Lock className="w-2.5 h-2.5" /> Hidden
                       </span>
                     </div>
                   )}
@@ -160,25 +159,23 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                       ${product.price.toFixed(2)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-on-surface-variant line-clamp-1 leading-relaxed">
-                    {product.description}
-                  </p>
 
                   <div className="flex items-center justify-between border-t border-outline-variant/10 pt-2.5 mt-auto">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${
-                        isOutOfStock
-                          ? 'bg-red-500 animate-pulse'
-                          : product.stock < 15
-                            ? 'bg-amber-500'
-                            : 'bg-green-500'
-                      }`} />
+                      <span className={`w-2 h-2 rounded-full ${locked ? 'bg-neutral-400' : 'bg-green-500'}`} />
                       <span className="text-[11px] font-semibold text-on-surface-variant">
-                        {isOutOfStock ? '0 in stock' : `${product.stock} in stock`}
+                        {locked ? 'Hidden from menu' : 'On the menu'}
                       </span>
                     </div>
 
                     <div className="flex gap-0.5">
+                      <button
+                        onClick={() => onToggleLock(product)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary-container/60 transition-colors text-primary cursor-pointer"
+                        title={locked ? 'Show on guest menu' : 'Hide from guest menu'}
+                      >
+                        {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      </button>
                       <button
                         onClick={() => onEditProduct(product)}
                         className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary-container/60 transition-colors text-primary cursor-pointer"
@@ -221,27 +218,24 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Product</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Category</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Price</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-center">Stock</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-center">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/15">
               {filteredProducts.map((product) => {
-                const isOutOfStock = product.stock <= 0;
+                const locked = !!product.locked;
                 return (
                   <tr key={product.id} className="hover:bg-surface-container-low/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
-                        <img 
-                          src={product.imageUrl || product.image} 
+                        <img
+                          src={product.imageUrl || product.image}
                           alt={product.name}
-                          className="w-12 h-12 rounded-lg object-cover shrink-0 border border-outline-variant/20"
+                          className={`w-12 h-12 rounded-lg object-cover shrink-0 border border-outline-variant/20 ${locked ? 'grayscale opacity-60' : ''}`}
                           referrerPolicy="no-referrer"
                         />
-                        <div>
-                          <p className="text-sm font-bold text-primary">{product.name}</p>
-                          <p className="text-xs text-on-surface-variant/80 line-clamp-1 max-w-sm">{product.description}</p>
-                        </div>
+                        <p className="text-sm font-bold text-primary">{product.name}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -254,21 +248,28 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="inline-flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <span className={`w-2 h-2 rounded-full ${locked ? 'bg-neutral-400' : 'bg-green-500'}`} />
                         <span className="text-xs font-bold text-on-surface-variant">
-                          {isOutOfStock ? 'Out of stock' : `${product.stock} units`}
+                          {locked ? 'Hidden' : 'On menu'}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex gap-2 justify-end">
-                        <button 
+                        <button
+                          onClick={() => onToggleLock(product)}
+                          className="w-8 h-8 rounded-full hover:bg-secondary-container-high flex items-center justify-center text-primary cursor-pointer border border-outline-variant/10"
+                          title={locked ? 'Show on guest menu' : 'Hide from guest menu'}
+                        >
+                          {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
                           onClick={() => onEditProduct(product)}
                           className="w-8 h-8 rounded-full hover:bg-secondary-container-high flex items-center justify-center text-primary cursor-pointer border border-outline-variant/10"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => onDeleteProduct(product.id)}
                           className="w-8 h-8 rounded-full hover:bg-neutral-200 flex items-center justify-center text-neutral-500 hover:text-neutral-900 cursor-pointer border border-outline-variant/10"
                         >

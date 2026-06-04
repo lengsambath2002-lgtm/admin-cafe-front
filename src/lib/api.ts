@@ -79,8 +79,6 @@ export interface ProductRequest {
   name: string;
   category: string;
   price: number;
-  stock?: number;
-  description?: string;
   image?: string;
 }
 
@@ -238,6 +236,11 @@ export const api = {
     }),
   deleteProduct: (id: string) =>
     request<void>(`/api/products/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  // Lock hides a product from the guest menu; unlock re-exposes it.
+  lockProduct: (id: string) =>
+    request<Product>(`/api/products/${encodeURIComponent(id)}/lock`, { method: 'PATCH' }),
+  unlockProduct: (id: string) =>
+    request<Product>(`/api/products/${encodeURIComponent(id)}/unlock`, { method: 'PATCH' }),
 
   // Orders
   listOrders: () => request<Order[]>('/api/orders'),

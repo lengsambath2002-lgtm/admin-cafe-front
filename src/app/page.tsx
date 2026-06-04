@@ -21,7 +21,9 @@ import {
   LogIn,
   HelpCircle,
   Sparkles,
-  Check
+  Check,
+  ChevronLeft,
+  ClipboardList
 } from 'lucide-react';
 
 import { Category, Product, Order, Transaction } from '../types';
@@ -34,6 +36,7 @@ import CategoriesView from '../components/CategoriesView';
 import ReportsView from '../components/ReportsView';
 import RegisterProductView from '../components/RegisterProductView';
 import TakeOrderView, { PlaceOrderPayload } from '../components/TakeOrderView';
+import OrderListView from '../components/OrderListView';
 
 // Merge orders from several sources (regular + guest), de-duped by id, newest first.
 function mergeOrders(...results: PromiseSettledResult<Order[]>[]): Order[] {
@@ -111,6 +114,9 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Count of new (unstarted) orders — shown as a badge on the Orders List nav.
+  const newOrderCount = orders.filter((o) => o.status === 'New').length;
+
   // Initial data load lifecycle
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -186,6 +192,21 @@ export default function App() {
   // Mobile sidebar drawer helper
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Desktop sidebar collapse (persisted).
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('brewmaster_sidebar_collapsed') === '1') {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+  const toggleSidebar = () => {
+    setSidebarCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem('brewmaster_sidebar_collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   // How-to guide modal
   const [showHelp, setShowHelp] = useState(false);
 
@@ -260,8 +281,6 @@ export default function App() {
       name: productData.name || 'New Product',
       category: productData.category || 'espresso',
       price: productData.price ?? 0,
-      stock: productData.stock ?? 0,
-      description: productData.description || '',
       image: productData.image || ''
     };
 
@@ -303,6 +322,16 @@ export default function App() {
       }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete product.');
+    }
+  };
+
+  // Toggle a product's lock — locked products are hidden from the guest menu.
+  const handleToggleLock = async (product: Product) => {
+    try {
+      const updated = product.locked ? await api.unlockProduct(product.id) : await api.lockProduct(product.id);
+      setProducts(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update product lock.');
     }
   };
 
@@ -384,6 +413,7 @@ export default function App() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'orders', label: 'Take Order', icon: ShoppingCart },
+            { id: 'order-list', label: 'Orders List', icon: ClipboardList },
             { id: 'products', label: 'Products', icon: Boxes },
             { id: 'categories', label: 'Menu', icon: Tags },
             { id: 'reports', label: 'Reports', icon: BarChart3 },
@@ -403,6 +433,11 @@ export default function App() {
               >
                 <IconComp className="w-4.5 h-4.5" />
                 {item.label}
+                {item.id === 'order-list' && newOrderCount > 0 && (
+                  <span className={`ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${isSelected ? 'bg-white text-primary' : 'bg-blue-600 text-white'}`}>
+                    {newOrderCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -420,14 +455,29 @@ export default function App() {
         </div>
       )}
 
-      {/* Desktop/Tablet persistent left SideNavBar (spec styled) */}
+      {/* Desktop/Tablet persistent left SideNavBar (collapsible) */}
       {!isGuest && (
-      <aside className="hidden md:flex fixed left-0 top-0 h-full flex-col py-8 bg-surface border-r border-outline-variant w-[280px] shrink-0 z-25 text-left justify-between">
+      <aside className={`hidden md:flex fixed left-0 top-0 h-full flex-col py-8 bg-surface border-r border-outline-variant shrink-0 z-25 text-left justify-between transition-[width] duration-300 ${sidebarCollapsed ? 'w-[76px]' : 'w-[280px]'}`}>
         <div>
-          {/* Brand Header */}
-          <div className="px-6 mb-8 select-none">
-            <h1 className="text-xl font-bold text-primary tracking-tight font-display">Brewmaster</h1>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/50 mt-0.5">Admin Portal</p>
+          {/* Brand Header + collapse toggle */}
+          <div className={`mb-8 select-none flex items-center ${sidebarCollapsed ? 'flex-col gap-3 px-2' : 'justify-between px-6'}`}>
+            {sidebarCollapsed ? (
+              <div className="p-2 bg-primary rounded-xl">
+                <Coffee className="w-5 h-5 text-on-primary" />
+              </div>
+            ) : (
+              <div>
+                <h1 className="text-xl font-bold text-primary tracking-tight font-display">Brewmaster</h1>
+                <p className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant/50 mt-0.5">Admin Portal</p>
+              </div>
+            )}
+            <button
+              onClick={toggleSidebar}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+            >
+              <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+            </button>
           </div>
 
           {/* Main Navigation indices list */}
@@ -435,6 +485,7 @@ export default function App() {
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'orders', label: 'Take Order', icon: ShoppingCart },
+              { id: 'order-list', label: 'Orders List', icon: ClipboardList },
                 { id: 'products', label: 'Products', icon: Boxes },
               { id: 'categories', label: 'Menu', icon: Tags },
               { id: 'reports', label: 'Reports', icon: BarChart3 },
@@ -448,31 +499,47 @@ export default function App() {
                     setActiveTab(item.id);
                     setEditingProduct(null);
                   }}
-                  className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl font-bold text-[13px] tracking-wide cursor-pointer transition-all duration-150 ${
+                  title={sidebarCollapsed ? item.label : undefined}
+                  className={`w-full flex items-center py-3.5 rounded-xl font-bold text-[13px] tracking-wide cursor-pointer transition-all duration-150 ${
+                    sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-4'
+                  } ${
                     isSelected
                       ? 'bg-tertiary text-white shadow-sm'
                       : 'text-on-surface-variant hover:bg-surface-container-high'
                   }`}
                 >
-                  <IconComp className="w-4.5 h-4.5 shrink-0" />
-                  <span>{item.label}</span>
+                  <span className="relative shrink-0">
+                    <IconComp className="w-4.5 h-4.5" />
+                    {item.id === 'order-list' && newOrderCount > 0 && sidebarCollapsed && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-blue-600 text-white text-[8px] font-bold flex items-center justify-center leading-none">
+                        {newOrderCount}
+                      </span>
+                    )}
+                  </span>
+                  {!sidebarCollapsed && <span>{item.label}</span>}
+                  {item.id === 'order-list' && newOrderCount > 0 && !sidebarCollapsed && (
+                    <span className={`ml-auto min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${isSelected ? 'bg-white text-primary' : 'bg-blue-600 text-white'}`}>
+                      {newOrderCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Dynamic Admin Profile section footer */}
-        <div className="border-t border-outline-variant/20 pt-6 px-4 space-y-4">
-          <div className="space-y-0.5">
-            <button
-              onClick={isGuest ? goToAdminLogin : handleLogout}
-              className="w-full flex items-center gap-3.5 px-4 py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all cursor-pointer"
-            >
-              {isGuest ? <LogIn className="w-4.5 h-4.5" /> : <LogOut className="w-4.5 h-4.5" />}
-              <span>{isGuest ? 'Admin Login' : 'Log out'}</span>
-            </button>
-          </div>
+        {/* Footer — log out */}
+        <div className="border-t border-outline-variant/20 pt-6 px-2.5">
+          <button
+            onClick={isGuest ? goToAdminLogin : handleLogout}
+            title={sidebarCollapsed ? (isGuest ? 'Admin Login' : 'Log out') : undefined}
+            className={`w-full flex items-center py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all cursor-pointer ${
+              sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-4'
+            }`}
+          >
+            {isGuest ? <LogIn className="w-4.5 h-4.5 shrink-0" /> : <LogOut className="w-4.5 h-4.5 shrink-0" />}
+            {!sidebarCollapsed && <span>{isGuest ? 'Admin Login' : 'Log out'}</span>}
+          </button>
         </div>
       </aside>
       )}
@@ -661,7 +728,7 @@ export default function App() {
       })()}
 
       {/* Main Content Pane wrapper */}
-      <main className={`flex-1 ${isGuest ? '' : 'md:ml-[280px]'} p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between`}>
+      <main className={`flex-1 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between transition-[margin] duration-300`}>
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -697,8 +764,15 @@ export default function App() {
               products={products}
               categories={categories}
               orders={orders}
-              showOrderHistory={!isGuest}
+              showOrderHistory={false}
               onPlaceOrder={handlePlaceOrder}
+              onUpdateStatus={handleOrderUpdate}
+            />
+          )}
+
+          {activeTab === 'order-list' && (
+            <OrderListView
+              orders={orders}
               onUpdateStatus={handleOrderUpdate}
             />
           )}
@@ -713,6 +787,7 @@ export default function App() {
               }}
               onEditProduct={handleEditProductClick}
               onDeleteProduct={handleDeleteProduct}
+              onToggleLock={handleToggleLock}
             />
           )}
 

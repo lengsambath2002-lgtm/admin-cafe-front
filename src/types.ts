@@ -16,8 +16,7 @@ export interface Product {
   name: string;
   category: string; // Category id or category name (e.g. 'espresso', 'cold_brew', etc.)
   price: number;
-  stock: number;
-  description: string;
+  locked?: boolean; // when true, hidden from the guest menu
   image: string;
   imageUrl?: string; // fallback if uploaded
 }

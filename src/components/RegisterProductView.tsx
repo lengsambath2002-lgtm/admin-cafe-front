@@ -36,8 +36,6 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState<number | ''>('');
-  const [stock, setStock] = useState<number | ''>('');
-  const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
 
   const [savingStatus, setSavingStatus] = useState<idle | saving | success | error>('idle');
@@ -81,15 +79,11 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
       setName(editingProduct.name);
       setCategory(editingProduct.category);
       setPrice(editingProduct.price);
-      setStock(editingProduct.stock);
-      setDescription(editingProduct.description);
       setImage(editingProduct.imageUrl || editingProduct.image);
     } else {
       setName('');
       setCategory('');
       setPrice('');
-      setStock('');
-      setDescription('');
       setImage('');
     }
   }, [editingProduct]);
@@ -106,8 +100,6 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
         name: name.trim(),
         category,
         price: Number(price) || 0,
-        stock: Number(stock) || 0,
-        description: description.trim(),
         image: image || PRESET_PRODUCT_PHOTOS[0].url
       });
       setSavingStatus('success');
@@ -193,33 +185,6 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
                 </div>
               </div>
 
-              {/* Stock Fields */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Initial Stock</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  placeholder="e.g. 50"
-                  className="w-full bg-surface-container-low text-xs px-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
-                  required
-                />
-              </div>
-
-            </div>
-
-            {/* Description note */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</label>
-              <textarea 
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Describe the flavor profile, bean origins, extraction methods or bakery ingredients..."
-                className="w-full bg-surface-container-low text-xs px-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40 resize-none leading-relaxed"
-                required
-              />
             </div>
 
             {/* Predefined visual options select */}
@@ -312,7 +277,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
                   {name || 'Product Title'}
                 </div>
                 <div className="h-3 w-40 bg-surface-container rounded-full truncate text-[10px] text-on-surface-variant mt-0.5">
-                  {description || 'Product flavor breakdown'}
+                  {category ? getCategoryName(category) : 'Category'}
                 </div>
                 <div className="h-4 w-12 bg-secondary-container text-primary rounded-full mt-1.5 flex items-center justify-center font-bold text-[10px] py-1.5">
                   ${price ? Number(price).toFixed(2) : '0.00'}

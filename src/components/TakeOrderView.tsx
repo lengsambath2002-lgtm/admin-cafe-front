@@ -282,9 +282,9 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
               <p className="text-on-surface-variant font-semibold text-sm">No products in this category.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {sections.flatMap((section) => section.items).map((product) => {
-                const isOutOfStock = product.stock <= 0;
+                const locked = !!product.locked;
                 const inOrderQty = orderList
                   .filter((l) => l.productName === product.name)
                   .reduce((n, l) => n + l.quantity, 0);
@@ -292,7 +292,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                   <button
                     key={product.id}
                     type="button"
-                    disabled={isOutOfStock}
+                    disabled={locked}
                     onClick={() => addProductToOrder(product)}
                     className="group relative text-left rounded-2xl border border-outline-variant/30 overflow-hidden bg-surface-container-lowest shadow-bento hover:shadow-bento-raised transition-all duration-300 active:scale-[0.98] cursor-pointer hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50 flex flex-col"
                   >
@@ -304,7 +304,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                         referrerPolicy="no-referrer"
                       />
                       {/* Add affordance */}
-                      {!isOutOfStock && (
+                      {!locked && (
                         <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
                           <Plus className="w-4 h-4" />
                         </div>
@@ -315,10 +315,10 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                           {inOrderQty}
                         </div>
                       )}
-                      {isOutOfStock && (
+                      {locked && (
                         <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
                           <span className="bg-error text-on-error px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide">
-                            Out of Stock
+                            Hidden
                           </span>
                         </div>
                       )}

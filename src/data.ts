@@ -37,8 +37,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Signature Latte',
     category: 'espresso',
     price: 5.50,
-    stock: 84,
-    description: 'A masterfully prepared caffe latte with velvety smooth milk foam and signature double espresso shot.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCWag7MpuwITw_u60NGEQkyfs4RXpmJ73RZxon86KMyTXhVl2P9YH3JDO3JI063wiKFUrx455PLcRMZoWlTNH9TZDwVjtf0N330tKq8X2FUy8DEQ9f_POeBsRuY-OtocIvm0btzHwWC_EPt5yWcF6kY6vmXAJj6oylKnTypFOqugfgfDHzKgo8jdCNbK-URPsOQey-oa7iheTv0NuxSFcxIW8AblEPMRyAJ7Pu2E1m22h9_YW4C9NY16Uoy3W0YVAcdkj9f85jsv5A'
   },
   {
@@ -46,8 +44,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Kyoto Cold Brew',
     category: 'cold_brew',
     price: 6.25,
-    stock: 32,
-    description: 'Slow-drip Kyoto-style cold brew with clear slow-frozen ice spheres, bringing clear clarity and sweetness.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB_9Em2NxSCFBDbf2G-M1dabz4YhoQlyGf6BN6z-jg1S8tloRGiNUHe-SP3qeRdFAqkeomUdAGH16vK4jKa6fmr0nS80OTVQ-nvkc07XtQNk67yNFH9dGoMUvn3PN4cRSfFfLaeP0WCuwI2geUnf7n06sNbDSZtZ-AMurafThxBp4fjl7ZrzAEBtPnJnx_bm2pbClWaelpF0X9mXlwSrwBdtZuzWxE2oY_ixvJNvCK6TRidEjN4kTW-u4ngIsOpcQ38Ev7rMvGd7yE'
   },
   {
@@ -55,8 +51,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Sourdough Croissant',
     category: 'pastries',
     price: 4.75,
-    stock: 12,
-    description: 'Golden flaky sourdough croissant baked fresh daily with raw butter, crunchy visual layers and deep rich crumb.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAy92GGIdvriConmGQUitY6xGOwDR53i34Ln0wOEQZrECdVo9HDkQbRR6c-yZpA-Q0H4zjShPuqdIuR8QB059zkbf-Nmv_R0tIAmmvgswvyWKGavGiU74UpNBrl9pI91XgaGlooQ1OP9zZiH379_7-Fr7I0KIdUnr_uTxXoz4G_HfYWi-nSOlRYQbo1kUs-9x9bTo0h7mrg55yUXKWEwTcZPNeqRZGCtF1r1NmtojRRHnNRM3JAEvvtFAUzjGbeoeSnEW6JlmSY6D4'
   },
   {
@@ -64,8 +58,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Ethiopia Yirgacheffe',
     category: 'whole_bean',
     price: 18.00,
-    stock: 45,
-    description: 'Lightly roasted single-origin whole bean coffee with distinct floral notes, bergamot citrus acidity and lavender aroma.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCdd57KweF-rEZDlm5ZD2kZWSBreQNO7FMLiV8T5OIx2n6V-3neL179SVTDFUtQ2JfYOZvvpu5Q4tIkyV_dRDqVZe1DLJtDEn7HBVq_svstI1IKfNWMjXTHzOhAYM_0AeNCT0os5TCqIE4E7muSSpH-UFXmhvylOGCsg-z7lHqxF3Cr1lEUwDbE95qwrsvWcZ4PCAr_q4nZ-pyV-pY6fH5so8fZMVnEdhSqMH95d9XYsxRh7a9zrIVgxgSVENHvI3ycmPf7KChyPWk'
   },
   {
@@ -73,8 +65,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Sea Salt Cookie',
     category: 'pastries',
     price: 3.50,
-    stock: 0,
-    description: 'Decadent dark chocolate cookie finished with premium flaky sea salt and gooey warm chocolate core chunks.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB_3__5YMC6fJb436jvu_-KWQcJnT2_kC-jcIlrMYGF052ZhI6nxH2QL1FkeVaW5-UpYdrYgyYIsrFtVMdZTGfRzrdBREIw1tjsM6RRq9W_VFEmnjy-IhacxdlKj85gllNjzruGXLYAGLByd_12IKjVGEKoMM47uyLlcZcmkmBCNmEvG_i_mRlpoUuRUzz0iT0DmnG2QpG-fKM-cHcVaYQm15FX9LBESEnJUZY64taGq_i9_CpffvZi7Dqd7hduAX9b0FGE3nJoOrA'
   },
   {
@@ -82,8 +72,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Oat Milk Latte',
     category: 'espresso',
     price: 5.50,
-    stock: 95,
-    description: 'Creamy barista oat milk paired with our rich Signature Espresso for a smooth and satisfying non-dairy cup.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA5XVPLLbq5XprLeh2MQo0n4CCR9W4ZdpOWVioxJnHDg9lA0t5AUCL4yCWzL1rPW9K6qNGFkO_fDBqiCuQ-rATXD08mMeUTYFcT5-IUjqYeJw1lVMClquDprdwbirWDbm1pU2mdg20ncrCYC2yOHV12ut94v9zjoKvTBdnGJwsj8g2jMfugcGQPOUv6OuBqWH7OnPMBwvfu9FG78IyhN5A9BNY9saFxUqXNxKL_jaWbl72cPAuahgNfmJcrpDv1CPJQQbtYf7pnQw'
   },
   {
@@ -91,8 +79,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Flat White',
     category: 'espresso',
     price: 4.50,
-    stock: 40,
-    description: 'Expertly extracted espresso covered in a thin, dense layer of finely steamed microfoam milk.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA5XVPLLbq5XprLeh2MQo0n4CCR9W4ZdpOWVioxJnHDg9lA0t5AUCL4yCWzL1rPW9K6qNGFkO_fDBqiCuQ-rATXD08mMeUTYFcT5-IUjqYeJw1lVMClquDprdwbirWDbm1pU2mdg20ncrCYC2yOHV12ut94v9zjoKvTBdnGJwsj8g2jMfugcGQPOUv6OuBqWH7OnPMBwvfu9FG78IyhN5A9BNY9saFxUqXNxKL_jaWbl72cPAuahgNfmJcrpDv1CPJQQbtYf7pnQw'
   }
 ];

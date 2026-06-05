@@ -48,16 +48,12 @@ function mergeOrders(...results: PromiseSettledResult<Order[]>[]): Order[] {
   return Array.from(byId.values()).sort((a, b) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''));
 }
 
-// If an image URL points to a Supabase Storage object, delete it too (best-effort).
-// Preset/external images (and old backend /uploads/ links) are left untouched.
+// If an image URL points to an uploaded file (Supabase Storage, served by the
+// backend), delete it too (best-effort). Preset/external images are left alone.
 function deleteImageIfUploaded(image?: string | null): void {
-  if (!image) return;
-  const marker = '/storage/v1/object/public/';
-  const i = image.indexOf(marker);
-  if (i < 0) return;
-  // rest = "<bucket>/<object-path>"; drop the bucket segment.
-  const path = image.slice(i + marker.length).split('/').slice(1).join('/');
-  if (path) api.deleteUpload(decodeURIComponent(path)).catch(() => {});
+  if (!image || !image.includes('/storage/v1/object/public/')) return;
+  const filename = image.split('/').pop();
+  if (filename) api.deleteUpload(decodeURIComponent(filename)).catch(() => {});
 }
 
 // Auto step-by-step walkthrough shown to guests on first visit.

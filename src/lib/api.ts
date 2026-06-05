@@ -4,6 +4,7 @@
  */
 
 import { Category, Product, Order, Transaction } from '../types';
+import { supabase, STORAGE_BUCKET } from './supabase';
 
 // Backend base URL — configurable per environment, falls back to the deployed Render service.
 const BASE_URL = (
@@ -302,29 +303,22 @@ export const api = {
     URL.revokeObjectURL(url);
   },
 
-  // Uploads an image via multipart/form-data (POST /api/upload).
-  // Do NOT set Content-Type — the browser must add the multipart boundary.
-  // Returns the absolute asset URL plus the raw server payload.
+  // Uploads an image to Supabase Storage (persistent, unlike the backend's
+  // ephemeral disk). Returns the public URL + the object path (used for delete).
   async uploadImage(file: File): Promise<{ url: string; filename?: string; raw: Record<string, string> }> {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch(`${BASE_URL}/api/upload`, { method: 'POST', body: form, headers: authHeader() });
-    if (!res.ok) {
-      throw new Error(`Upload failed (${res.status})`);
-    }
-    const raw = (await res.json()) as Record<string, string>;
-    // The response is a string map; tolerate common key names from the backend.
-    const candidate = raw.url ?? raw.path ?? raw.location ?? raw.filename ?? Object.values(raw)[0] ?? '';
-    const url = candidate && !/^https?:\/\//i.test(candidate)
-      ? `${BASE_URL}${candidate.startsWith('/') ? '' : '/'}${candidate}`
-      : candidate;
-    // The server only returns a url, so derive the filename (basename) from it
-    // — that's what DELETE /api/upload/{filename} needs.
-    const filename = raw.filename ?? (url ? url.split('/').pop() || undefined : undefined);
-    return { url, filename, raw };
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type || undefined });
+    if (error || !data) throw new Error(error?.message || 'Upload failed');
+    const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(data.path);
+    return { url: pub.publicUrl, filename: data.path, raw: {} };
   },
 
-  // Removes a previously uploaded file (DELETE /api/upload/{filename}).
-  deleteUpload: (filename: string) =>
-    request<Record<string, unknown>>(`/api/upload/${encodeURIComponent(filename)}`, { method: 'DELETE' }),
+  // Removes an uploaded object from Supabase Storage (path = object name in the bucket).
+  async deleteUpload(path: string): Promise<void> {
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+    if (error) throw new Error(error.message);
+  },
 };

@@ -250,6 +250,17 @@ export default function App() {
     }
   };
 
+  // Cancel (delete) an order — DELETE /api/orders/{id}.
+  const handleOrderCancel = async (orderId: string): Promise<void> => {
+    try {
+      await api.cancelOrder(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to cancel order.');
+      throw err;
+    }
+  };
+
   // adding categories — POST /api/categories
   const handleAddCategory = async (newCat: { name: string; image: string }) => {
     try {
@@ -732,6 +743,7 @@ export default function App() {
             <OrderListView
               orders={orders}
               onUpdateStatus={handleOrderUpdate}
+              onCancel={handleOrderCancel}
             />
           )}
 

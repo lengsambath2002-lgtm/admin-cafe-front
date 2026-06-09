@@ -6,12 +6,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ClipboardList, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Grid3X3, List, Eye, X } from 'lucide-react';
+import { ClipboardList, CheckCircle, ArrowRight, Grid3X3, List, Eye, X, Trash2 } from 'lucide-react';
 import { Order } from '../types';
 
 interface OrderListViewProps {
   orders: Order[];
   onUpdateStatus: (orderId: string, status: Order['status']) => Promise<Order>;
+  onCancel?: (orderId: string) => Promise<void>;
 }
 
 // Live status progression for a placed order.
@@ -44,12 +45,26 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 const isActive = (s: Order['status']) => s === 'New' || s === 'Preparing' || s === 'Ready';
 
-export default function OrderListView({ orders, onUpdateStatus }: Readonly<OrderListViewProps>) {
+export default function OrderListView({ orders, onUpdateStatus, onCancel }: Readonly<OrderListViewProps>) {
   const [filter, setFilter] = useState<Filter>('active');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [advancingId, setAdvancingId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+
+  const cancelOrder = async (order: Order) => {
+    if (!onCancel || cancelingId) return;
+    if (!window.confirm(`Cancel order #${order.id}? This cannot be undone.`)) return;
+    try {
+      setCancelingId(order.id);
+      await onCancel(order.id);
+      setDetailId(null);
+    } catch {
+      // parent surfaced the error
+    } finally {
+      setCancelingId(null);
+    }
+  };
 
   const visible = useMemo(() => {
     if (filter === 'active') return orders.filter((o) => isActive(o.status));
@@ -136,88 +151,34 @@ export default function OrderListView({ orders, onUpdateStatus }: Readonly<Order
       ) : viewStyle === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
           {visible.map((order) => {
-            const isOpen = expandedId === order.id;
-            const next = NEXT_STATUS[order.status];
-            const closed = order.status === 'Completed' || order.status === 'Picked Up';
             const orderItemCount = order.items.reduce((n, i) => n + i.quantity, 0);
             return (
-              <div
+              <button
                 key={order.id}
-                className={`rounded-2xl border bg-surface-container-lowest overflow-hidden shadow-bento transition-all duration-300 hover:shadow-bento-raised ${
-                  isOpen ? 'border-primary' : 'border-outline-variant/30'
-                }`}
+                type="button"
+                onClick={() => setDetailId(order.id)}
+                className="text-left rounded-2xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden shadow-bento transition-all duration-300 hover:shadow-bento-raised hover:border-primary/40 cursor-pointer p-4 space-y-2"
               >
-                {/* Card header — click to reveal items */}
-                <button
-                  type="button"
-                  onClick={() => setExpandedId((prev) => (prev === order.id ? null : order.id))}
-                  className="w-full text-left p-4 space-y-2 cursor-pointer hover:bg-surface-container-low/40 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-bold text-primary">Order #{order.id}</h4>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-on-surface-variant">
-                    {order.tableNumber || 'No table'}
-                    {order.customerName ? ` · ${order.customerName}` : ''}
-                    {order.isTakeout ? ' · To-Go' : ' · Dine-in'}
-                    {order.timeElapsed ? ` · ${order.timeElapsed}` : ''}
-                  </p>
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
-                      {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      {orderItemCount} item(s) · {isOpen ? 'hide details' : 'view details'}
-                    </span>
-                    <span className="text-sm font-bold text-secondary">${order.total.toFixed(2)}</span>
-                  </div>
-                </button>
-
-                {/* Items + totals + status action */}
-                {isOpen && (
-                  <div className="border-t border-outline-variant/15 p-3 space-y-2 animate-fade-in">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-start justify-between gap-3 p-3 rounded-xl border border-outline-variant/25 bg-surface-container-low/30">
-                        <div className="flex gap-3 min-w-0">
-                          <div className="w-8 h-8 bg-secondary-container/60 text-primary rounded-lg flex items-center justify-center font-bold text-xs shrink-0">
-                            {item.quantity}x
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-primary leading-tight">
-                              {item.productName} <span className="text-on-surface-variant font-medium">({item.size})</span>
-                            </p>
-                            {item.notes && item.notes.length > 0 && (
-                              <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{item.notes.join(' • ')}</p>
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold text-secondary shrink-0">${item.priceOrder.toFixed(2)}</span>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between pt-1 px-1">
-                      <span className="text-[11px] text-on-surface-variant">Subtotal ${order.subtotal.toFixed(2)} · Tax ${order.tax.toFixed(2)}</span>
-                      <span className="text-sm font-bold text-secondary">${order.total.toFixed(2)}</span>
-                    </div>
-                    {closed ? (
-                      <div className="flex items-center justify-center gap-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-xl py-3">
-                        <CheckCircle className="w-4 h-4" />
-                        Order {order.status}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => advanceStatus(order)}
-                        disabled={advancingId === order.id}
-                        className="w-full bg-primary text-on-primary hover:bg-primary-container font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        {advancingId === order.id ? 'Updating…' : ADVANCE_LABEL[order.status]}
-                        {next && <ArrowRight className="w-4 h-4" />}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-sm font-bold text-primary">Order #{order.id}</h4>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>
+                    {order.status}
+                  </span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant">
+                  {order.tableNumber || 'No table'}
+                  {order.customerName ? ` · ${order.customerName}` : ''}
+                  {order.isTakeout ? ' · To-Go' : ' · Dine-in'}
+                  {order.timeElapsed ? ` · ${order.timeElapsed}` : ''}
+                </p>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" />
+                    {orderItemCount} item(s) · view details
+                  </span>
+                  <span className="text-sm font-bold text-secondary">${order.total.toFixed(2)}</span>
+                </div>
+              </button>
             );
           })}
         </div>
@@ -366,6 +327,18 @@ export default function OrderListView({ orders, onUpdateStatus }: Readonly<Order
                 >
                   {advancingId === o.id ? 'Updating…' : ADVANCE_LABEL[o.status]}
                   {next && <ArrowRight className="w-4 h-4" />}
+                </button>
+              )}
+
+              {!closed && onCancel && (
+                <button
+                  type="button"
+                  onClick={() => cancelOrder(o)}
+                  disabled={cancelingId === o.id}
+                  className="mt-2 w-full flex items-center justify-center gap-2 border border-red-300 text-red-600 hover:bg-red-50 font-bold text-xs py-3 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {cancelingId === o.id ? 'Canceling…' : 'Cancel order'}
                 </button>
               )}
             </div>

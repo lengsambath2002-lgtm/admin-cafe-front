@@ -17,6 +17,7 @@ import {
 import { Product, Category } from '../types';
 import { api } from '../lib/api';
 import { onImageError } from '../lib/img';
+import { useT } from '../lib/i18n';
 
 interface RegisterProductViewProps {
   categories: Category[];
@@ -34,6 +35,7 @@ const PRESET_PRODUCT_PHOTOS = [
 ];
 
 export default function RegisterProductView({ categories, onSubmitProduct, onCancel, editingProduct }: RegisterProductViewProps) {
+  const { t } = useT();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState<number | ''>('');
@@ -116,14 +118,14 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
       {/* Breadcrumbs and Page title */}
       <div>
         <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium mb-2.5">
-          <span className="hover:text-primary cursor-pointer" onClick={onCancel}>Products</span>
+          <span className="hover:text-primary cursor-pointer" onClick={onCancel}>{t('nav.products')}</span>
           <ChevronRight className="w-3.5 h-3.5 text-on-surface-variant/40" />
           <span className="text-primary font-bold">
-            {editingProduct ? 'Edit Details' : 'Register Product'}
+            {editingProduct ? t('reg.editDetails') : t('reg.registerProduct')}
           </span>
         </div>
         <h2 className="text-3xl font-bold text-primary tracking-tight">
-          {editingProduct ? 'Edit Product Details' : 'Register Product'}
+          {editingProduct ? t('reg.editProductDetails') : t('reg.registerProduct')}
         </h2>
       </div>
 
@@ -136,12 +138,12 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
               
               {/* Product Title */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Product Name</label>
-                <input 
-                  type="text" 
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('reg.productName')}</label>
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ethiopia Yirgacheffe"
+                  placeholder={t('reg.namePlaceholder')}
                   className="w-full bg-surface-container-low text-xs px-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                   required
                 />
@@ -149,7 +151,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
 
               {/* Category Dropdown */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Category</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('reg.category')}</label>
                 <div className="relative">
                   <select 
                     value={category}
@@ -157,7 +159,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
                     className="w-full appearance-none bg-surface-container-low text-xs px-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer"
                     required
                   >
-                    <option value="" disabled>Select category</option>
+                    <option value="" disabled>{t('reg.selectCategory')}</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
@@ -170,7 +172,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
 
               {/* Price Fields */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Price (USD)</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('reg.price')}</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold text-xs">$</span>
                   <input 
@@ -191,7 +193,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
             {/* Predefined visual options select */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Product Image</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">{t('reg.image')}</label>
 
                 {/* Upload your own image */}
                 <input
@@ -244,15 +246,15 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
                 <Save className="w-4 h-4" />
                 {savingStatus === 'saving' && 'Processing...'}
                 {savingStatus === 'success' && 'Product Saved!'}
-                {savingStatus === 'idle' && (editingProduct ? 'Update Product' : 'Save Product')}
+                {savingStatus === 'idle' && (editingProduct ? t('reg.updateProduct') : t('reg.saveProduct'))}
               </button>
-              
-              <button 
+
+              <button
                 type="button"
                 onClick={onCancel}
                 className="flex-1 bg-secondary-container hover:bg-surface-container-high text-primary font-bold py-4 rounded-xl active:scale-95 transition-all text-xs cursor-pointer"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -263,7 +265,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
           
           {/* Menu Card representation Preview block */}
           <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/20 text-left">
-            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4">Preview on Menu</p>
+            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4">{t('reg.previewOnMenu')}</p>
             
             <div className="bg-white rounded-2xl overflow-hidden border border-outline-variant/25 flex shadow-sm hover:shadow-md transition-all">
               <div className="w-24 h-24 bg-surface-container-low flex items-center justify-center shrink-0">

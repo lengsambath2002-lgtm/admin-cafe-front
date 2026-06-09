@@ -10,9 +10,12 @@ import { useRouter } from 'next/navigation';
 import { Coffee, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { signIn, getAuthUser, mapRole, GUEST_USER, DEMO_ADMIN } from '../../lib/auth';
 import { api, setAuthToken } from '../../lib/api';
+import { useT } from '../../lib/i18n';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useT();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,6 +62,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
 
+      <div className="fixed top-5 right-5 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {/* ── Left: brand panel (desktop only) ─────────────────── */}
       <div className="hidden lg:flex w-[45%] bg-primary text-on-primary flex-col justify-between p-12 relative overflow-hidden">
         <div className="flex items-center gap-2.5 select-none">
@@ -100,7 +107,7 @@ export default function LoginPage() {
             {/* Email */}
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Email
+                {t('login.email')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-on-surface-variant/45 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -119,7 +126,7 @@ export default function LoginPage() {
             {/* Password */}
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Password
+                {t('login.password')}
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-on-surface-variant/45 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -152,7 +159,7 @@ export default function LoginPage() {
               disabled={submitting}
               className="w-full bg-primary text-on-primary hover:bg-primary-container font-bold text-sm px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {submitting ? 'Signing in…' : 'Sign In'}
+              {submitting ? `${t('login.signIn')}…` : t('login.signIn')}
               {!submitting && <ArrowRight className="w-4 h-4" />}
             </button>
           </form>
@@ -170,7 +177,7 @@ export default function LoginPage() {
             onClick={handleGuest}
             className="w-full bg-surface-container-lowest text-primary border border-outline-variant/60 hover:bg-surface-container-low font-bold text-sm px-6 py-3.5 rounded-xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
           >
-            Continue as Guest
+            {t('login.continueGuest')}
             <ArrowRight className="w-4 h-4" />
           </button>
 

@@ -23,6 +23,7 @@ import { onImageError } from '../lib/img';
 import { generateOrderKHQR, OrderKHQR } from '../lib/khqr';
 import { api, getAuthToken } from '../lib/api';
 import KHQRModal from './KHQRModal';
+import { useT } from '../lib/i18n';
 
 // A line in the order list — carries its own customization so the admin can
 // tweak sugar / size / qty / notes after adding it.
@@ -94,6 +95,7 @@ const STATUS_BADGE: Record<Order['status'], string> = {
 };
 
 export default function TakeOrderView({ products, categories, orders, showOrderHistory = true, onPlaceOrder, onUpdateStatus }: Readonly<TakeOrderViewProps>) {
+  const { t } = useT();
   const [tableNumber, setTableNumber] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [isTakeout, setIsTakeout] = useState(false);
@@ -274,10 +276,12 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
         <KHQRModal payment={khqr.payment} orderId={khqr.orderId} onClose={() => setKhqr(null)} />
       )}
 
+      {/* Sticky header: title + category chips stay pinned while the menu scrolls */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 space-y-5">
       {/* Page header — matches the Products catalog layout */}
       <div>
-        <h2 className="text-3xl font-bold text-primary tracking-tight">Take Order</h2>
-        <p className="text-secondary text-base mt-1">Tap a product to add it, customize each line, then place the order.</p>
+        <h2 className="text-3xl font-bold text-primary tracking-tight">{t('to.title')}</h2>
+        <p className="text-secondary text-base mt-1">{t('to.subtitle')}</p>
       </div>
 
       {/* Category chips — full width, above both columns */}
@@ -291,7 +295,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
               : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
           }`}
         >
-          All
+          {t('to.all')}
         </button>
         {categories.map((cat) => (
           <button
@@ -307,6 +311,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
             {cat.name}
           </button>
         ))}
+      </div>
       </div>
 
       {/* Body: product menu (left) + order panel (right) */}
@@ -359,7 +364,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                       {locked && (
                         <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
                           <span className="bg-error text-on-error px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide">
-                            Hidden
+                            {t('to.hidden')}
                           </span>
                         </div>
                       )}
@@ -400,7 +405,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
           <div className="bg-surface-container-lowest rounded-t-2xl lg:rounded-2xl border border-outline-variant/25 shadow-bento overflow-hidden">
             {/* Mobile sheet header */}
             <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
-              <span className="text-sm font-bold text-primary">Your order</span>
+              <span className="text-sm font-bold text-primary">{t('to.yourOrder')}</span>
               <button type="button" onClick={() => setCartOpen(false)} className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant cursor-pointer">
                 <ChevronDown className="w-4 h-4" />
               </button>
@@ -413,28 +418,28 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                 {/* Header */}
                 <div className="flex items-center gap-2 px-4 pt-4">
                   <ClipboardList className="w-4 h-4 text-primary" />
-                  <h4 className="text-xs font-bold text-primary uppercase tracking-wider">New Order</h4>
+                  <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t('to.newOrder')}</h4>
                 </div>
                 {/* Who / where */}
                 <div className="p-4 space-y-3 border-b border-outline-variant/15">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Table</label>
+                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{t('to.table')}</label>
                       <input
                         type="text"
                         value={tableNumber}
                         onChange={(e) => setTableNumber(e.target.value)}
-                        placeholder="e.g. Table 7"
+                        placeholder={t('to.tablePlaceholder')}
                         className="w-full bg-surface-container-lowest text-xs px-3 py-2.5 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Customer</label>
+                      <label className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">{t('to.customer')}</label>
                       <input
                         type="text"
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Optional"
+                        placeholder={t('to.optional')}
                         className="w-full bg-surface-container-lowest text-xs px-3 py-2.5 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                       />
                     </div>
@@ -445,14 +450,14 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                       onClick={() => setIsTakeout(false)}
                       className={`flex-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${!isTakeout ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
                     >
-                      Dine-in
+                      {t('to.dineIn')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsTakeout(true)}
                       className={`flex-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${isTakeout ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant'}`}
                     >
-                      To-Go
+                      {t('to.toGo')}
                     </button>
                   </div>
                 </div>
@@ -461,7 +466,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-primary" />
-                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider">Order List ({itemCount})</h4>
+                    <h4 className="text-xs font-bold text-primary uppercase tracking-wider">{t('to.orderList')} ({itemCount})</h4>
                   </div>
 
                   {orderList.length === 0 ? (
@@ -624,7 +629,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                 {/* Card footer: totals + place */}
                 <div className="border-t border-outline-variant/15 px-4 py-4 space-y-3">
                 <div className="text-left">
-                  <p className="text-[11px] text-on-surface-variant">Subtotal ${subtotal.toFixed(2)} · Tax (8%) ${tax.toFixed(2)}</p>
+                  <p className="text-[11px] text-on-surface-variant">{t('common.subtotal')} ${subtotal.toFixed(2)} · {t('common.tax')} (8%) ${tax.toFixed(2)}</p>
                   <p className="text-xl font-bold text-primary tracking-tight">Total ${total.toFixed(2)}</p>
                 </div>
                 <button
@@ -634,7 +639,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                   className="w-full bg-primary text-on-primary hover:bg-primary-container font-bold text-xs px-6 py-3.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <ClipboardList className="w-4 h-4" />
-                  {isPlacing ? 'Placing…' : 'Place Order'}
+                  {isPlacing ? t('to.placing') : t('to.placeOrder')}
                 </button>
                 </div>
             </div>

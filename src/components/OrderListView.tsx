@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react';
 import { ClipboardList, CheckCircle, ArrowRight, Grid3X3, List, Eye, X, Trash2 } from 'lucide-react';
 import { Order } from '../types';
+import { useT } from '../lib/i18n';
 
 interface OrderListViewProps {
   orders: Order[];
@@ -20,12 +21,6 @@ const NEXT_STATUS: Partial<Record<Order['status'], Order['status']>> = {
   New: 'Preparing',
   Preparing: 'Ready',
   Ready: 'Completed'
-};
-
-const ADVANCE_LABEL: Partial<Record<Order['status'], string>> = {
-  New: 'Start Preparing',
-  Preparing: 'Mark as Ready',
-  Ready: 'Complete & Pickup'
 };
 
 const STATUS_BADGE: Record<Order['status'], string> = {
@@ -46,6 +41,7 @@ const FILTERS: { id: Filter; label: string }[] = [
 const isActive = (s: Order['status']) => s === 'New' || s === 'Preparing' || s === 'Ready';
 
 export default function OrderListView({ orders, onUpdateStatus, onCancel }: Readonly<OrderListViewProps>) {
+  const { t } = useT();
   const [filter, setFilter] = useState<Filter>('active');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
   const [advancingId, setAdvancingId] = useState<string | null>(null);
@@ -90,17 +86,19 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Sticky header: title + filters stay pinned while the list scrolls below */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
       {/* Page header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold text-primary tracking-tight">Orders List</h2>
+            <h2 className="text-3xl font-bold text-primary tracking-tight">{t('ol.title')}</h2>
             <span className="flex items-center gap-1.5 bg-surface-container text-on-surface-variant px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              {activeCount} Active
+              {activeCount} {t('ol.active')}
             </span>
           </div>
-          <p className="text-secondary text-base mt-1">Process and track incoming orders in real-time.</p>
+          <p className="text-secondary text-base mt-1">{t('ol.subtitle')}</p>
         </div>
 
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
@@ -135,18 +133,19 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                   filter === f.id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-primary'
                 }`}
               >
-                {f.label}
+                {t(`ol.${f.id}`)}
               </button>
             ))}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Orders grid */}
       {visible.length === 0 ? (
         <div className="text-center py-20 bg-surface-container-lowest rounded-2xl border border-outline-variant/25 shadow-bento">
           <ClipboardList className="w-10 h-10 text-on-surface-variant/35 mx-auto mb-3" />
-          <p className="text-on-surface-variant font-semibold text-sm">No {filter === 'all' ? '' : filter} orders.</p>
+          <p className="text-on-surface-variant font-semibold text-sm">{t('ol.noOrders')}</p>
         </div>
       ) : viewStyle === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
@@ -162,19 +161,19 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                 <div className="flex items-center justify-between gap-2">
                   <h4 className="text-sm font-bold text-primary">Order #{order.id}</h4>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>
-                    {order.status}
+                    {t(`status.${order.status}`)}
                   </span>
                 </div>
                 <p className="text-[11px] text-on-surface-variant">
-                  {order.tableNumber || 'No table'}
+                  {order.tableNumber || t('ol.noTable')}
                   {order.customerName ? ` · ${order.customerName}` : ''}
-                  {order.isTakeout ? ' · To-Go' : ' · Dine-in'}
+                  {order.isTakeout ? ` · ${t('ol.toGo')}` : ` · ${t('ol.dineIn')}`}
                   {order.timeElapsed ? ` · ${order.timeElapsed}` : ''}
                 </p>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5" />
-                    {orderItemCount} item(s) · view details
+                    {orderItemCount} {t('ol.items')} · {t('ol.viewDetails')}
                   </span>
                   <span className="text-sm font-bold text-secondary">${order.total.toFixed(2)}</span>
                 </div>
@@ -207,15 +206,15 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                     </td>
                     <td className="px-5 py-3.5">
                       <p className="text-xs font-semibold text-primary">
-                        {order.tableNumber || 'No table'}{order.customerName ? ` · ${order.customerName}` : ''}
+                        {order.tableNumber || t('ol.noTable')}{order.customerName ? ` · ${order.customerName}` : ''}
                       </p>
                       <p className="text-[11px] text-on-surface-variant">
-                        {order.isTakeout ? 'To-Go' : 'Dine-in'}{order.timeElapsed ? ` · ${order.timeElapsed}` : ''}
+                        {order.isTakeout ? t('ol.toGo') : t('ol.dineIn')}{order.timeElapsed ? ` · ${order.timeElapsed}` : ''}
                       </p>
                     </td>
                     <td className="px-5 py-3.5 text-center text-xs font-semibold text-on-surface-variant">{orderItemCount}</td>
                     <td className="px-5 py-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>{order.status}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>{t(`status.${order.status}`)}</span>
                     </td>
                     <td className="px-5 py-3.5 text-right text-sm font-bold text-secondary">${order.total.toFixed(2)}</td>
                     <td className="px-5 py-3.5">
@@ -231,7 +230,7 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                         {closed ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700">
                             <CheckCircle className="w-3.5 h-3.5" />
-                            {order.status}
+                            {t(`status.${order.status}`)}
                           </span>
                         ) : (
                           <button
@@ -240,7 +239,7 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                             disabled={advancingId === order.id}
                             className="inline-flex items-center gap-1.5 bg-primary text-on-primary hover:bg-primary-container font-bold text-[11px] px-3 py-1.5 rounded-lg transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                           >
-                            {advancingId === order.id ? 'Updating…' : ADVANCE_LABEL[order.status]}
+                            {advancingId === order.id ? t('ol.updating') : t(`advance.${order.status}`)}
                             {next && <ArrowRight className="w-3.5 h-3.5" />}
                           </button>
                         )}
@@ -278,12 +277,12 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
 
               <div className="flex items-center gap-2 mb-1 pr-8">
                 <h3 className="text-lg font-bold text-primary tracking-tight">Order #{o.id}</h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[o.status]}`}>{o.status}</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[o.status]}`}>{t(`status.${o.status}`)}</span>
               </div>
               <p className="text-xs text-on-surface-variant mb-4">
-                {o.tableNumber || 'No table'}
+                {o.tableNumber || t('ol.noTable')}
                 {o.customerName ? ` · ${o.customerName}` : ''}
-                {o.isTakeout ? ' · To-Go' : ' · Dine-in'}
+                {o.isTakeout ? ` · ${t('ol.toGo')}` : ` · ${t('ol.dineIn')}`}
                 {o.timeElapsed ? ` · ${o.timeElapsed}` : ''}
               </p>
 
@@ -309,14 +308,14 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
               </div>
 
               <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/15">
-                <span className="text-[11px] text-on-surface-variant">Subtotal ${o.subtotal.toFixed(2)} · Tax ${o.tax.toFixed(2)}</span>
+                <span className="text-[11px] text-on-surface-variant">{t('common.subtotal')} ${o.subtotal.toFixed(2)} · {t('common.tax')} ${o.tax.toFixed(2)}</span>
                 <span className="text-base font-bold text-primary">${o.total.toFixed(2)}</span>
               </div>
 
               {closed ? (
                 <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-xl py-3">
                   <CheckCircle className="w-4 h-4" />
-                  Order {o.status}
+                  {t(`status.${o.status}`)}
                 </div>
               ) : (
                 <button
@@ -325,7 +324,7 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                   disabled={advancingId === o.id}
                   className="mt-4 w-full bg-primary text-on-primary hover:bg-primary-container font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {advancingId === o.id ? 'Updating…' : ADVANCE_LABEL[o.status]}
+                  {advancingId === o.id ? t('ol.updating') : t(`advance.${o.status}`)}
                   {next && <ArrowRight className="w-4 h-4" />}
                 </button>
               )}
@@ -338,7 +337,7 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
                   className="mt-2 w-full flex items-center justify-center gap-2 border border-red-300 text-red-600 hover:bg-red-50 font-bold text-xs py-3 rounded-xl transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" />
-                  {cancelingId === o.id ? 'Canceling…' : 'Cancel order'}
+                  {cancelingId === o.id ? t('ol.canceling') : t('ol.cancelOrder')}
                 </button>
               )}
             </div>

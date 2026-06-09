@@ -25,6 +25,7 @@ import {
   TopProduct,
   ReportKpis
 } from '../lib/api';
+import { useT } from '../lib/i18n';
 
 interface ReportsViewProps {
   transactions: Transaction[];
@@ -34,6 +35,7 @@ const fmtMoney = (n: number) =>
   n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function ReportsView({ transactions }: ReportsViewProps) {
+  const { t } = useT();
   const [reportTab, setReportTab] = useState<ReportRange>('monthly');
   const [searchTx, setSearchTx] = useState('');
 
@@ -82,7 +84,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
       {/* Top Header Row of Reports */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-primary tracking-tight">Business Reports</h2>
+          <h2 className="text-3xl font-bold text-primary tracking-tight">{t('rep.title')}</h2>
           <p className="text-secondary text-base mt-1">Audit transactions logs, product allocations, and store revenue performance.</p>
         </div>
 
@@ -190,7 +192,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
         {/* Left pane: Top Selling products */}
         <div className="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant/25 rounded-2xl flex flex-col shadow-bento overflow-hidden">
           <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/20">
-            <h4 className="font-bold text-lg text-primary tracking-tight">Top Selling Products</h4>
+            <h4 className="font-bold text-lg text-primary tracking-tight">{t('rep.topProducts')}</h4>
             <span className="text-[10px] font-bold text-on-surface-variant/70 uppercase">
               {reportTab === 'monthly' ? 'This Month' : reportTab === 'weekly' ? 'This Week' : 'This Year'}
             </span>
@@ -200,9 +202,9 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
             <table className="w-full text-left border-separate border-spacing-y-2">
               <thead>
                 <tr className="border-b border-outline-variant">
-                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Product</th>
-                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">Units</th>
-                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">Revenue</th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">{t('rep.colProduct')}</th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">{t('rep.colUnits')}</th>
+                  <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">{t('rep.colRevenue')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/5">
@@ -239,7 +241,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
         {/* Right pane: Recent Transactions list */}
         <div className="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant/25 rounded-2xl flex flex-col shadow-bento overflow-hidden">
           <div className="p-5 border-b border-outline-variant flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface-container-low/20 gap-4">
-            <h4 className="font-bold text-lg text-primary tracking-tight">Recent Transactions</h4>
+            <h4 className="font-bold text-lg text-primary tracking-tight">{t('rep.recentTransactions')}</h4>
             
             {/* Table search filter */}
             <div className="relative w-full sm:w-64">
@@ -250,7 +252,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
                 type="text" 
                 value={searchTx}
                 onChange={(e) => setSearchTx(e.target.value)}
-                placeholder="Search orders, customers..."
+                placeholder={t('rep.searchOrders')}
                 className="w-full bg-white text-xs pl-8 pr-4 py-1.5 rounded-full border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
               />
             </div>
@@ -261,10 +263,10 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
               <thead className="bg-surface-container-low/40 border-b border-outline-variant sticky top-0 z-10 backdrop-blur-md">
                 <tr>
                   <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">ID</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Customer</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Timestamp</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">Status</th>
-                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">Amount</th>
+                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">{t('rep.colCustomer')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">{t('rep.colTimestamp')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">{t('rep.colStatus')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-right">{t('rep.colAmount')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/45">
@@ -308,7 +310,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
         
         {/* Avg Order Value KPI Tile */}
         <div className="bg-secondary-container border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
-          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">AVG ORDER VALUE</p>
+          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">{t('rep.avgOrderValue')}</p>
           <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">${kpis ? fmtMoney(kpis.avgOrderValue) : '—'}</h5>
           <p className="text-[10px] text-on-surface-variant/80 mt-1">
             {kpis ? `${kpis.avgOrderValueGrowthPct >= 0 ? '+' : ''}${kpis.avgOrderValueGrowthPct.toFixed(1)}% from last period` : ' '}
@@ -317,7 +319,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
 
         {/* New Customers KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
-          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">NEW CUSTOMERS</p>
+          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">{t('rep.newCustomers')}</p>
           <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis ? kpis.newCustomers.toLocaleString('en-US') : '—'}</h5>
           <p className={`text-[10px] font-semibold mt-1 ${(kpis?.newCustomersGrowthPct ?? 0) < 0 ? 'text-red-600' : 'text-green-700'}`}>
             {kpis ? `${kpis.newCustomersGrowthPct >= 0 ? '+' : ''}${kpis.newCustomersGrowthPct.toFixed(1)}% growth` : ' '}
@@ -326,7 +328,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
 
         {/* Top Category KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
-          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">TOP CATEGORY</p>
+          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">{t('rep.topCategory')}</p>
           <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis?.topCategory ?? '—'}</h5>
           <p className="text-[10px] text-on-surface-variant/85 mt-1">
             {kpis ? `${kpis.topCategorySharePct.toFixed(0)}% of total volume` : ' '}
@@ -335,7 +337,7 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
 
         {/* Staff Efficiency KPI Tile */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 p-5 rounded-2xl shadow-bento text-left">
-          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">STAFF EFFICIENCY</p>
+          <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-widest">{t('rep.staffEfficiency')}</p>
           <h5 className="text-2xl font-bold text-primary tracking-tight mt-1.5">{kpis ? `${kpis.staffEfficiencyMinutes.toFixed(1)}m` : '—'}</h5>
           <p className="text-[10px] text-on-surface-variant/85 mt-1">Avg. turnaround times per ticket</p>
         </div>

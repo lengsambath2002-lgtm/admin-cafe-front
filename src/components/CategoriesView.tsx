@@ -22,6 +22,7 @@ import {
 import { Category } from '../types';
 import { api } from '../lib/api';
 import { onImageError } from '../lib/img';
+import { useT } from '../lib/i18n';
 
 interface CategoriesViewProps {
   categories: Category[];
@@ -30,6 +31,7 @@ interface CategoriesViewProps {
 }
 
 export default function CategoriesView({ categories, onAddCategory, onDeleteCategory }: CategoriesViewProps) {
+  const { t } = useT();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatImage, setNewCatImage] = useState('');
@@ -110,12 +112,15 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
   return (
     <div className="space-y-8 animate-fade-in relative pb-16">
       
+      {/* Sticky header: title stays pinned while the grid scrolls below */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
       {/* Category Heading Info */}
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-bold text-primary tracking-tight">Menu</h2>
-          <p className="text-secondary text-base mt-2">Organize your boutique offerings by coffee beans, extraction methods, and artisanal snacks.</p>
+          <h2 className="text-3xl font-bold text-primary tracking-tight">{t('cat.title')}</h2>
+          <p className="text-secondary text-base mt-2">{t('cat.subtitle')}</p>
         </div>
+      </div>
       </div>
 
       {/* Grid of Categories */}
@@ -164,8 +169,8 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
           <div className="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center mb-3 group-hover:bg-primary-container group-hover:scale-110 transition-all duration-300">
             <Plus className="w-5 h-5 text-primary group-hover:text-on-primary transition-colors" />
           </div>
-          <span className="font-bold text-sm text-primary tracking-tight">Add Category</span>
-          <span className="text-[11px] text-secondary text-center mt-1 max-w-[180px]">Create a new menu directory.</span>
+          <span className="font-bold text-sm text-primary tracking-tight">{t('cat.addCategory')}</span>
+          <span className="text-[11px] text-secondary text-center mt-1 max-w-[180px]">{t('cat.createDirectory')}</span>
         </button>
       </div>
 
@@ -175,7 +180,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
         className="fixed bottom-24 right-8 lg:bottom-12 lg:right-12 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold flex items-center gap-2.5 px-6 py-4 rounded-full shadow-lg hover:scale-103 hover:shadow-xl active:scale-95 transition-all z-20 cursor-pointer group"
       >
         <PlusCircle className="w-5 h-5 text-on-primary" />
-        <span>Add Category</span>
+        <span>{t('cat.addCategory')}</span>
       </button>
 
       {/* Interactive Category Dialog modal box prompt */}
@@ -191,17 +196,17 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
 
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-bold text-primary tracking-tight">Create Menu Section</h3>
+              <h3 className="text-lg font-bold text-primary tracking-tight">{t('cat.createSection')}</h3>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Category Name</label>
-                <input 
-                  type="text" 
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('cat.categoryName')}</label>
+                <input
+                  type="text"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="e.g. Specialty Beverages"
+                  placeholder={t('cat.namePlaceholder')}
                   className="w-full bg-surface-container-low text-xs px-4 py-3 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
                   required
                 />

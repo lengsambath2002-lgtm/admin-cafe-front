@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Product, Category } from '../types';
 import { onImageError } from '../lib/img';
+import { useT } from '../lib/i18n';
 
 interface ProductsViewProps {
   products: Product[];
@@ -30,6 +31,7 @@ interface ProductsViewProps {
 }
 
 export default function ProductsView({ products, categories, onNavigate, onEditProduct, onDeleteProduct, onToggleLock }: ProductsViewProps) {
+  const { t } = useT();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,10 +55,12 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Sticky header: title + filters stay pinned while the grid scrolls below */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 space-y-6">
       {/* Page heading */}
       <div>
-        <h2 className="text-3xl font-bold text-primary tracking-tight">Product Catalog</h2>
-        <p className="text-secondary text-base mt-1">Manage your menu offerings, edit prices and monitor inventory levels.</p>
+        <h2 className="text-3xl font-bold text-primary tracking-tight">{t('prod.title')}</h2>
+        <p className="text-secondary text-base mt-1">{t('prod.subtitle')}</p>
       </div>
 
       {/* Filter and search controls row */}
@@ -67,7 +71,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             onClick={() => setSelectedCategory('All')}
             className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
           >
-            All
+            {t('common.all')}
           </button>
           {categories.map((cat) => (
             <button 
@@ -106,13 +110,14 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             </span>
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder={t('prod.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-surface-container-low text-xs px-4 py-2.5 pl-9 rounded-xl border border-outline-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-on-surface-variant/40"
             />
           </div>
         </div>
+      </div>
       </div>
 
       {/* Render Product views based on layouts selection */}
@@ -145,7 +150,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                   {locked && (
                     <div className="absolute top-2.5 left-2.5">
                       <span className="inline-flex items-center gap-1 bg-primary text-on-primary px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider shadow-sm">
-                        <Lock className="w-2.5 h-2.5" /> Hidden
+                        <Lock className="w-2.5 h-2.5" /> {t('to.hidden')}
                       </span>
                     </div>
                   )}
@@ -166,7 +171,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                     <div className="flex items-center gap-1.5">
                       <span className={`w-2 h-2 rounded-full ${locked ? 'bg-neutral-400' : 'bg-green-500'}`} />
                       <span className="text-[11px] font-semibold text-on-surface-variant">
-                        {locked ? 'Hidden from menu' : 'On the menu'}
+                        {locked ? t('prod.hiddenFromMenu') : t('prod.onMenu')}
                       </span>
                     </div>
 
@@ -207,8 +212,8 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3 group-hover:scale-110 transition-transform group-hover:bg-primary-container">
               <Plus className="w-5 h-5 text-primary group-hover:text-on-primary" />
             </div>
-            <p className="font-bold text-sm text-primary tracking-tight">Add New Item</p>
-            <p className="text-[11px] text-on-surface-variant mt-1 max-w-[180px] text-center">Create a new catalog listing.</p>
+            <p className="font-bold text-sm text-primary tracking-tight">{t('prod.addNewItem')}</p>
+            <p className="text-[11px] text-on-surface-variant mt-1 max-w-[180px] text-center">{t('prod.createListing')}</p>
           </button>
         </div>
       ) : (
@@ -217,11 +222,11 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low/50 border-b border-outline-variant/35">
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Product</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">Category</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Price</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-center">Status</th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">Actions</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">{t('prod.colProduct')}</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80">{t('prod.colCategory')}</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">{t('prod.colPrice')}</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-center">{t('prod.colStatus')}</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase text-on-surface-variant/80 text-right">{t('prod.colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/15">
@@ -253,7 +258,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                       <div className="inline-flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${locked ? 'bg-neutral-400' : 'bg-green-500'}`} />
                         <span className="text-xs font-bold text-on-surface-variant">
-                          {locked ? 'Hidden' : 'On menu'}
+                          {locked ? t('prod.hiddenFromMenu') : t('prod.onMenu')}
                         </span>
                       </div>
                     </td>
@@ -294,7 +299,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
         className="fixed bottom-24 right-8 lg:bottom-12 lg:right-12 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold flex items-center gap-2.5 px-6 py-4 rounded-full shadow-lg hover:scale-103 hover:shadow-xl active:scale-95 transition-all z-20 cursor-pointer"
       >
         <PlusCircle className="w-5 h-5 text-on-primary" />
-        <span>Add Product</span>
+        <span>{t('prod.addProduct')}</span>
       </button>
     </div>
   );

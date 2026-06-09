@@ -10,6 +10,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { X, Check, CheckCircle2 } from 'lucide-react';
 import { OrderKHQR, MERCHANT } from '../lib/khqr';
 import { api } from '../lib/api';
+import { useT } from '../lib/i18n';
 
 interface KHQRModalProps {
   payment: OrderKHQR;
@@ -23,6 +24,7 @@ interface KHQRModalProps {
 // KHQR payment dialog — shows the scannable QR for the order total, then a
 // success screen once payment is confirmed.
 export default function KHQRModal({ payment, orderId, onClose, onPaid }: KHQRModalProps) {
+  const { t } = useT();
   const symbol = payment.currency === 'USD' ? '$' : '៛';
   const [paid, setPaid] = useState(false);
   const [remaining, setRemaining] = useState(() => Math.max(0, payment.expiresAt - Date.now()));
@@ -96,7 +98,7 @@ export default function KHQRModal({ payment, orderId, onClose, onPaid }: KHQRMod
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-4 animate-fade-in">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
-              <p className="text-lg font-extrabold text-primary">Payment received</p>
+              <p className="text-lg font-extrabold text-primary">{t('khqr.received')}</p>
               <p className="text-sm text-on-surface-variant mt-1">
                 {symbol}{payment.amount.toFixed(2)} confirmed{orderId ? ` · Order #${orderId}` : ''}
               </p>
@@ -107,7 +109,7 @@ export default function KHQRModal({ payment, orderId, onClose, onPaid }: KHQRMod
                 className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-primary-container font-bold text-sm py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                Done
+                {t('common.done')}
               </button>
             </div>
           </>
@@ -123,17 +125,17 @@ export default function KHQRModal({ payment, orderId, onClose, onPaid }: KHQRMod
               </div>
 
               {expired ? (
-                <p className="mt-4 text-sm font-bold text-error">QR expired — close and place again.</p>
+                <p className="mt-4 text-sm font-bold text-error">{t('khqr.expired')}</p>
               ) : (
                 <p className="mt-4 text-xs text-on-surface-variant">
-                  Scan with any Bakong-supported app · expires in{' '}
+                  {t('khqr.scan')} · {t('khqr.expiresIn')}{' '}
                   <span className="font-bold text-primary tabular-nums">{mm}:{ss.toString().padStart(2, '0')}</span>
                 </p>
               )}
               {orderId && (
                 <p className="mt-1 text-[11px] text-on-surface-variant/70">Order #{orderId}</p>
               )}
-              <p className="mt-3 text-[11px] text-on-surface-variant/60">Waiting for payment…</p>
+              <p className="mt-3 text-[11px] text-on-surface-variant/60">{t('khqr.waiting')}</p>
             </div>
           </>
         )}

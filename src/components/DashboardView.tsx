@@ -21,6 +21,7 @@ import { Order } from '../types';
 import { api, ReportSummary } from '../lib/api';
 import { generateOrderKHQR, OrderKHQR } from '../lib/khqr';
 import KHQRModal from './KHQRModal';
+import { useT } from '../lib/i18n';
 
 interface DashboardViewProps {
   orders: Order[];
@@ -38,6 +39,7 @@ const STATUS_BADGE: Record<Order['status'], string> = {
 };
 
 export default function DashboardView({ orders, onNavigate, onSelectOrder }: DashboardViewProps) {
+  const { t } = useT();
   // Server-computed daily summary (KPI cards).
   const [summary, setSummary] = useState<ReportSummary | null>(null);
 
@@ -98,8 +100,8 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
       {/* Quick Action Heading */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-primary tracking-tight">Daily Overview</h2>
-          <p className="text-secondary text-base mt-1">Monitor your cafe&apos;s peak performance and order velocity in real-time.</p>
+          <h2 className="text-3xl font-bold text-primary tracking-tight">{t('dash.title')}</h2>
+          <p className="text-secondary text-base mt-1">{t('dash.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -107,14 +109,14 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
             className="flex items-center gap-2 border border-outline-variant/60 bg-surface-container-lowest text-primary hover:bg-surface-container-low px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-primary" />
-            Register Product
+            {t('dash.registerProduct')}
           </button>
           <button
             onClick={() => onNavigate('reports')}
             className="flex items-center gap-2 bg-primary text-on-primary hover:bg-primary-container px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-md active:scale-95 cursor-pointer"
           >
             <TrendingUp className="w-4 h-4 text-on-primary" />
-            Export Report
+            {t('dash.exportReport')}
           </button>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Daily Revenue</p>
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">{t('dash.dailyRevenue')}</p>
               <h3 className="text-4xl font-extrabold text-primary tracking-tight mt-2">
                 ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
@@ -140,7 +142,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
               {revenueGrowth < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
               {Math.abs(revenueGrowth).toFixed(1)}%
             </span>
-            <span className="text-xs text-on-surface-variant">vs yesterday</span>
+            <span className="text-xs text-on-surface-variant">{t('dash.vsYesterday')}</span>
           </div>
         </div>
 
@@ -148,7 +150,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Total Orders</p>
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">{t('dash.totalOrders')}</p>
               <h3 className="text-4xl font-extrabold text-primary tracking-tight mt-2">{totalOrders.toLocaleString('en-US')}</h3>
             </div>
             <div className="p-3 bg-secondary-container/60 rounded-xl">
@@ -168,7 +170,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
         <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-bento border border-outline-variant/30 flex flex-col justify-between transition-all duration-300 hover:shadow-bento-raised hover:-translate-y-0.5 relative overflow-hidden">
           <div className="flex justify-between items-start relative z-10">
             <div>
-              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Top Selling Drink</p>
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">{t('dash.topSellingDrink')}</p>
               <h3 className="text-2xl font-bold text-primary tracking-tight mt-2">{topDrink?.name ?? '—'}</h3>
             </div>
             <div className="p-3 bg-secondary-container/60 rounded-xl">
@@ -177,7 +179,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
           </div>
           <div className="mt-6 relative z-10">
             <p className="text-sm font-medium text-on-surface-variant">
-              {topDrink ? `${topDrink.unitsSold.toLocaleString('en-US')} units sold today` : 'No sales yet today'}
+              {topDrink ? `${topDrink.unitsSold.toLocaleString('en-US')} ${t('dash.unitsSoldToday')}` : t('dash.noSalesToday')}
             </p>
           </div>
           <div className="absolute -right-6 -bottom-6 opacity-[0.03] rotate-12 pointer-events-none">
@@ -194,7 +196,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
           <div className="flex justify-between items-center mb-5">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-primary" />
-              <h3 className="text-xl font-bold text-primary tracking-tight">Active Orders</h3>
+              <h3 className="text-xl font-bold text-primary tracking-tight">{t('dash.activeOrders')}</h3>
               {activeOrders.length > 0 && (
                 <span className="ml-1 min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center">
                   {activeOrders.length}
@@ -205,7 +207,7 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
               onClick={() => onNavigate('order-list')}
               className="text-primary hover:underline text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
-              View all
+              {t('dash.viewAll')}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -215,8 +217,8 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
               <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3">
                 <ClipboardList className="w-5 h-5 text-on-surface-variant/60" />
               </div>
-              <p className="text-sm font-semibold text-on-surface-variant">No active orders right now</p>
-              <p className="text-xs text-on-surface-variant/70 mt-1">New orders will show up here.</p>
+              <p className="text-sm font-semibold text-on-surface-variant">{t('dash.noActiveOrders')}</p>
+              <p className="text-xs text-on-surface-variant/70 mt-1">{t('dash.newOrdersWillShow')}</p>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -239,14 +241,14 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
                         {order.tableNumber || 'No table'}{order.customerName ? ` · ${order.customerName}` : ''}
                       </p>
                       <p className="text-xs text-on-surface-variant">
-                        {order.items.reduce((n, i) => n + i.quantity, 0)} items
-                        {order.isTakeout ? ' · To-Go' : ' · Dine-in'}
+                        {order.items.reduce((n, i) => n + i.quantity, 0)} {t('dash.items')}
+                        {order.isTakeout ? ` · ${t('to.toGo')}` : ` · ${t('to.dineIn')}`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[order.status]}`}>
-                      {order.status}
+                      {t(`status.${order.status}`)}
                     </span>
                     <span className="text-sm font-bold text-primary tabular-nums">${order.total.toFixed(2)}</span>
                   </div>
@@ -271,19 +273,19 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
             </div>
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${STATUS_BADGE[selectedOrder.status]}`}>
-                {selectedOrder.status}
+                {t(`status.${selectedOrder.status}`)}
               </span>
               {selectedOrder.paymentStatus && (
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                   selectedOrder.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
                 }`}>
-                  {selectedOrder.paymentStatus === 'PAID' ? 'Paid' : 'Unpaid'}
+                  {selectedOrder.paymentStatus === 'PAID' ? t('common.paid') : t('common.unpaid')}
                 </span>
               )}
               <span className="text-xs text-on-surface-variant">
-                {selectedOrder.tableNumber || 'No table'}
+                {selectedOrder.tableNumber || t('ol.noTable')}
                 {selectedOrder.customerName ? ` · ${selectedOrder.customerName}` : ''}
-                {selectedOrder.isTakeout ? ' · To-Go' : ' · Dine-in'}
+                {selectedOrder.isTakeout ? ` · ${t('to.toGo')}` : ` · ${t('to.dineIn')}`}
               </span>
             </div>
 
@@ -304,15 +306,15 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
             </div>
 
             <div className="mt-4 pt-3 border-t border-outline-variant/20 space-y-1">
-              <div className="flex justify-between text-xs text-on-surface-variant"><span>Subtotal</span><span>${selectedOrder.subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-xs text-on-surface-variant"><span>Tax</span><span>${selectedOrder.tax.toFixed(2)}</span></div>
-              <div className="flex justify-between text-base font-extrabold text-primary"><span>Total</span><span>${selectedOrder.total.toFixed(2)}</span></div>
+              <div className="flex justify-between text-xs text-on-surface-variant"><span>{t('common.subtotal')}</span><span>${selectedOrder.subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-xs text-on-surface-variant"><span>{t('common.tax')}</span><span>${selectedOrder.tax.toFixed(2)}</span></div>
+              <div className="flex justify-between text-base font-extrabold text-primary"><span>{t('common.total')}</span><span>${selectedOrder.total.toFixed(2)}</span></div>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2">
               {selectedOrder.paymentStatus === 'PAID' ? (
                 <div className="flex items-center justify-center gap-1.5 bg-green-50 text-green-700 font-bold text-sm py-2.5 rounded-xl">
-                  Paid
+                  {t('common.paid')}
                 </div>
               ) : (
                 <button
@@ -321,14 +323,14 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
                   className="flex items-center justify-center gap-1.5 bg-primary text-on-primary hover:bg-primary-container disabled:opacity-50 font-bold text-sm py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer"
                 >
                   <QrCode className="w-4 h-4" />
-                  {charging === selectedOrder.id ? '…' : 'Show KHQR'}
+                  {charging === selectedOrder.id ? t('dash.generating') : t('dash.showKhqr')}
                 </button>
               )}
               <button
                 onClick={() => onSelectOrder(selectedOrder.id)}
                 className="flex items-center justify-center gap-1.5 border border-outline-variant/50 hover:border-primary text-primary font-bold text-sm py-2.5 rounded-xl transition-all cursor-pointer"
               >
-                Orders List
+                {t('dash.ordersListBtn')}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -338,8 +340,8 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
             <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3">
               <ClipboardList className="w-5 h-5 text-on-surface-variant/60" />
             </div>
-            <p className="text-sm font-semibold text-on-surface-variant">Select an order</p>
-            <p className="text-xs text-on-surface-variant/70 mt-1">Click an active order to see its details.</p>
+            <p className="text-sm font-semibold text-on-surface-variant">{t('dash.selectOrder')}</p>
+            <p className="text-xs text-on-surface-variant/70 mt-1">{t('dash.selectOrderHint')}</p>
           </div>
         )}
       </div>

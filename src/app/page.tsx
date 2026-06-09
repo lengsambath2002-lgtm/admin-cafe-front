@@ -36,6 +36,8 @@ import ReportsView from '../components/ReportsView';
 import RegisterProductView from '../components/RegisterProductView';
 import TakeOrderView, { PlaceOrderPayload } from '../components/TakeOrderView';
 import OrderListView from '../components/OrderListView';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useT } from '../lib/i18n';
 
 // Merge orders from several sources (regular + guest), de-duped by id, newest first.
 function mergeOrders(...results: PromiseSettledResult<Order[]>[]): Order[] {
@@ -105,6 +107,7 @@ export default function App() {
 
   // Guests are restricted to the Take Order page; admins manage everything.
   const isGuest = authUser?.role === 'guest';
+  const { t } = useT();
 
   // Backend-backed reactive states (hydrated from the API on mount)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -387,7 +390,7 @@ export default function App() {
   if (!authChecked) return null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row relative">
+    <div className="h-screen overflow-hidden bg-background flex flex-col md:flex-row relative">
 
       {/* Chrome (mobile header, drawer, sidebar, bottom nav) is hidden for guests
           — they get a clean, full-width Take Order page. */}
@@ -398,12 +401,13 @@ export default function App() {
           <h1 className="text-lg font-bold text-primary leading-none">Café Admin</h1>
         </div>
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <button
             onClick={goToTakeOrder}
             className="p-1 px-3 bg-primary text-on-primary rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Order
+            {t('nav.orders')}
           </button>
           <button
             onClick={() => setShowHelp(true)}
@@ -451,12 +455,12 @@ export default function App() {
           {/* Main Navigation indices list */}
           <nav className="space-y-1 px-2.5">
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'orders', label: 'Take Order', icon: ShoppingCart },
-              { id: 'order-list', label: 'Orders List', icon: ClipboardList },
-                { id: 'products', label: 'Products', icon: Boxes },
-              { id: 'categories', label: 'Menu', icon: Tags },
-              { id: 'reports', label: 'Reports', icon: BarChart3 },
+              { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+              { id: 'orders', label: t('nav.takeOrder'), icon: ShoppingCart },
+              { id: 'order-list', label: t('nav.ordersList'), icon: ClipboardList },
+              { id: 'products', label: t('nav.products'), icon: Boxes },
+              { id: 'categories', label: t('nav.menu'), icon: Tags },
+              { id: 'reports', label: t('nav.reports'), icon: BarChart3 },
             ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
               const IconComp = item.icon;
               const isSelected = activeTab === item.id || (item.id === 'products' && activeTab === 'register_product');
@@ -506,7 +510,7 @@ export default function App() {
             }`}
           >
             {isGuest ? <LogIn className="w-4.5 h-4.5 shrink-0" /> : <LogOut className="w-4.5 h-4.5 shrink-0" />}
-            {!sidebarCollapsed && <span>{isGuest ? 'Admin Login' : 'Log out'}</span>}
+            {!sidebarCollapsed && <span>{isGuest ? t('common.adminLogin') : t('common.logout')}</span>}
           </button>
         </div>
       </aside>
@@ -516,13 +520,14 @@ export default function App() {
           they show on all sizes; admins use the mobile header on small screens to
           avoid overlapping it, so this floats on desktop only for them. */}
       <div className={`fixed top-5 right-6 z-40 items-center gap-2 ${isGuest ? 'flex' : 'hidden md:flex'}`}>
+        <LanguageSwitcher />
         {isGuest && (
           <button
             onClick={goToAdminLogin}
             className="flex items-center gap-1.5 bg-surface-container-lowest text-primary border border-outline-variant/50 hover:border-primary text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all cursor-pointer"
           >
             <LogIn className="w-4 h-4" />
-            Admin Login
+            {t('common.adminLogin')}
           </button>
         )}
         <button
@@ -531,7 +536,7 @@ export default function App() {
           className="flex items-center gap-1.5 bg-surface-container-lowest text-primary border border-outline-variant/50 hover:border-primary text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all cursor-pointer"
         >
           <HelpCircle className="w-4 h-4" />
-          Help
+          {t('common.help')}
         </button>
       </div>
 
@@ -698,7 +703,7 @@ export default function App() {
       })()}
 
       {/* Main Content Pane wrapper */}
-      <main className={`flex-1 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-x-hidden min-h-screen pb-24 md:pb-8 flex flex-col justify-between transition-[margin] duration-300`}>
+      <main className={`flex-1 min-h-0 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-8 flex flex-col justify-between transition-[margin] duration-300`}>
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -791,11 +796,11 @@ export default function App() {
       {!isGuest && (
       <nav className="md:hidden fixed bottom-0 left-0 w-full z-45 flex justify-around items-center px-4 py-3 pb-safe bg-surface border-t border-outline-variant/35 shadow-bento rounded-t-2xl">
         {[
-          { id: 'orders', label: 'Take', icon: ShoppingCart },
-          { id: 'order-list', label: 'Orders', icon: ClipboardList },
-          { id: 'products', label: 'Products', icon: Boxes },
-          { id: 'categories', label: 'Menu', icon: Tags },
-          { id: 'dashboard', label: 'Reports', icon: BarChart3 }, // "Reports" icon and bottom nav naming matches Screen 1
+          { id: 'orders', label: t('nav.take'), icon: ShoppingCart },
+          { id: 'order-list', label: t('nav.orders'), icon: ClipboardList },
+          { id: 'products', label: t('nav.products'), icon: Boxes },
+          { id: 'categories', label: t('nav.menu'), icon: Tags },
+          { id: 'dashboard', label: t('nav.reports'), icon: BarChart3 }, // "Reports" icon and bottom nav naming matches Screen 1
         ].filter((item) => !isGuest || item.id === 'orders').map((item) => {
           const IconComp = item.icon;
           const isSelected = activeTab === item.id || (item.id === 'dashboard' && activeTab === 'reports');

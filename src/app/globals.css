@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans: "DM Sans", "Inter", sans-serif;
+  /* Kantumruy Pro everywhere — renders Khmer + Latin consistently. */
+  --font-display: "Kantumruy Pro", sans-serif;
+  --font-sans: "Kantumruy Pro", sans-serif;
 
   /* Monochrome grayscale palette — no hue anywhere */
   --color-primary: #1a1a1a;

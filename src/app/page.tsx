@@ -707,13 +707,12 @@ export default function App() {
           {activeTab === 'dashboard' && (
             <DashboardView
               orders={orders}
-              transactions={transactions}
               onNavigate={(tab) => {
                 setActiveTab(tab);
                 setEditingProduct(null);
               }}
               onSelectOrder={() => {
-                setActiveTab('orders');
+                setActiveTab('order-list');
               }}
             />
           )}

@@ -246,6 +246,8 @@ export const api = {
   listOrders: () => request<Order[]>('/api/orders'),
   // Orders placed by guests — admin-only view.
   listGuestOrders: () => request<Order[]>('/api/orders/guest'),
+  // Orders that have been paid (KHQR confirmed).
+  listPaidOrders: () => request<Order[]>('/api/orders/paid'),
   placeOrder: (body: PlaceOrderRequest) =>
     request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(body) }),
   // Public guest checkout — no auth token required.
@@ -262,6 +264,25 @@ export const api = {
     request<UpdateStatusResponse>(`/api/orders/${encodeURIComponent(id)}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
+    }),
+
+  // KHQR — generate a Bakong payment QR for an order (requires auth; the backend
+  // uses its own merchant config + the order's total).
+  generateOrderKhqr: (
+    id: string,
+    body: { currency?: string; amount?: number; billNumber?: string; expirationTimestamp?: number } = {},
+  ) =>
+    request<{ qr: string; md5?: string }>(`/api/khqr/orders/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  // Checks whether a KHQR (by its md5) has been paid, via the Bakong Open API.
+  // Public endpoint — works for guest and staff checkout.
+  checkKhqr: (md5: string) =>
+    request<{ paid: boolean; responseCode?: number; message?: string }>('/api/khqr/check', {
+      method: 'POST',
+      body: JSON.stringify({ md5 }),
     }),
 
   // Transactions

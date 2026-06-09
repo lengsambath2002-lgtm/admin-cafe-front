@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { Product, Category, Order, OrderItem } from '../types';
 import { onImageError } from '../lib/img';
+import { generateOrderKHQR, OrderKHQR } from '../lib/khqr';
+import { api, getAuthToken } from '../lib/api';
+import KHQRModal from './KHQRModal';
 
 // A line in the order list — carries its own customization so the admin can
 // tweak sugar / size / qty / notes after adding it.
@@ -109,6 +112,9 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
 
   // Mobile: the order panel collapses into a cart button that opens a bottom sheet.
   const [cartOpen, setCartOpen] = useState(false);
+
+  // KHQR payment dialog shown after an order is placed.
+  const [khqr, setKhqr] = useState<{ payment: OrderKHQR; orderId?: string } | null>(null);
 
   // Menu browser state
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -212,6 +218,29 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
         isTakeout,
         items
       });
+      // Generate a KHQR for the order total before clearing the cart. Logged-in
+      // staff use the backend (its merchant config + order total); guests have no
+      // token, so they fall back to client-side generation. QR is non-fatal.
+      try {
+        const expiresAt = Date.now() + 10 * 60 * 1000; // 10-minute validity
+        const billNumber = `#${created.id}`;
+        let payment: OrderKHQR;
+        if (getAuthToken()) {
+          const res = await api.generateOrderKhqr(created.id, {
+            currency: 'USD', amount: total, billNumber, expirationTimestamp: expiresAt,
+          });
+          payment = { qr: res.qr, md5: res.md5 ?? '', amount: total, currency: 'USD', expiresAt };
+        } else {
+          payment = generateOrderKHQR(total, { billNumber });
+        }
+        setKhqr({ payment, orderId: created.id });
+      } catch (err) {
+        console.error('KHQR generation failed:', err);
+        // Best-effort client-side fallback (e.g. backend unreachable).
+        try {
+          setKhqr({ payment: generateOrderKHQR(total, { billNumber: `#${created.id}` }), orderId: created.id });
+        } catch { /* give up silently — order is still placed */ }
+      }
       // Clear the builder; the new order now appears in the orders list below,
       // expanded so its status can be advanced right away.
       resetBuilder();
@@ -239,6 +268,11 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
 
   return (
     <div className="space-y-6 animate-fade-in">
+
+      {/* KHQR payment dialog (shown after placing an order) */}
+      {khqr && (
+        <KHQRModal payment={khqr.payment} orderId={khqr.orderId} onClose={() => setKhqr(null)} />
+      )}
 
       {/* Page header — matches the Products catalog layout */}
       <div>

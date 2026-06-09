@@ -45,6 +45,10 @@ export interface Order {
   kitchenNote?: string;
   server?: string;
   queuePosition?: number;
+  orderNumber?: number;
+  orderDate?: string;
+  paymentStatus?: string; // e.g. 'PAID' | 'UNPAID'
+  paidAt?: string;
 }
 
 export interface Transaction {

@@ -398,7 +398,7 @@ export default function App() {
       <header className="md:hidden w-full top-0 sticky bg-surface border-b border-outline-variant/35 z-40 flex justify-between items-center px-4 h-16 shadow-xs shrink-0">
         <div className="flex items-center gap-2.5">
           <Coffee className="w-6 h-6 text-primary" />
-          <h1 className="text-lg font-bold text-primary leading-none">Café Admin</h1>
+          <h1 className="text-lg font-bold text-primary leading-none">Brew Café</h1>
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />

@@ -271,18 +271,21 @@ export const api = {
   generateOrderKhqr: (
     id: string,
     body: { currency?: string; amount?: number; billNumber?: string; expirationTimestamp?: number } = {},
-  ) =>
-    request<{ qr: string; md5?: string }>(`/api/khqr/orders/${encodeURIComponent(id)}`, {
+  ) => {
+    // KHQR rejects amounts with >2 decimals (float math can yield 4.31999…).
+    const payload = body.amount != null ? { ...body, amount: Math.round(body.amount * 100) / 100 } : body;
+    return request<{ qr: string; md5?: string }>(`/api/khqr/orders/${encodeURIComponent(id)}`, {
       method: 'POST',
-      body: JSON.stringify(body),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
 
-  // Checks whether a KHQR (by its md5) has been paid, via the Bakong Open API.
-  // Public endpoint — works for guest and staff checkout.
-  checkKhqr: (md5: string) =>
+  // Checks whether an order's KHQR (by its md5) has been paid, via the Bakong
+  // Open API. Public endpoint — works for guest and staff checkout.
+  checkKhqr: (orderId: string | number, md5: string) =>
     request<{ paid: boolean; responseCode?: number; message?: string }>('/api/khqr/check', {
       method: 'POST',
-      body: JSON.stringify({ md5 }),
+      body: JSON.stringify({ orderId: Number(orderId), md5 }),
     }),
 
   // Transactions

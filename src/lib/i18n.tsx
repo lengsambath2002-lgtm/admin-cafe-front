@@ -23,15 +23,15 @@ const en: Dict = {
   'nav.dashboard': 'Dashboard',
   'nav.takeOrder': 'Take Order',
   'nav.ordersList': 'Orders List',
-  'nav.products': 'Products',
+  'nav.products': 'Product',
   'nav.menu': 'Menu',
-  'nav.reports': 'Reports',
-  'nav.take': 'Take',
-  'nav.orders': 'Orders',
+  'nav.reports': 'Report',
+  'nav.take': 'Order',
+  'nav.orders': 'List',
 
   // Chrome / common
   'common.help': 'Help',
-  'common.adminLogin': 'Admin Login',
+  'common.adminLogin': 'Login',
   'common.logout': 'Log out',
   'common.newOrder': 'New Order',
   'common.subtotal': 'Subtotal',
@@ -71,11 +71,11 @@ const en: Dict = {
   'dash.selectOrderHint': 'Click an active order to see its details.',
   'dash.showKhqr': 'Show KHQR',
   'dash.generating': 'Generating…',
-  'dash.ordersListBtn': 'Orders List',
+  'dash.ordersListBtn': 'List',
   'dash.items': 'items',
 
   // Orders List
-  'ol.title': 'Orders List',
+  'ol.title': 'List',
   'ol.subtitle': 'Process and track incoming orders in real-time.',
   'ol.active': 'Active',
   'ol.completed': 'Completed',
@@ -91,7 +91,7 @@ const en: Dict = {
   'ol.toGo': 'To-Go',
 
   // Take Order
-  'to.title': 'Take Order',
+  'to.title': 'Order',
   'to.subtitle': 'Tap a product to add it, customize each line, then place the order.',
   'to.newOrder': 'New Order',
   'to.orderList': 'Order List',
@@ -123,7 +123,7 @@ const en: Dict = {
   'common.all': 'All',
 
   // Products
-  'prod.title': 'Product Catalog',
+  'prod.title': 'Product',
   'prod.subtitle': 'Manage your menu offerings, edit prices and monitor inventory levels.',
   'prod.search': 'Search products...',
   'prod.addProduct': 'Add Product',
@@ -161,7 +161,7 @@ const en: Dict = {
   'reg.saveProduct': 'Save Product',
 
   // Reports
-  'rep.title': 'Business Reports',
+  'rep.title': 'Reports',
   'rep.topProducts': 'Top Selling Products',
   'rep.recentTransactions': 'Recent Transactions',
   'rep.searchOrders': 'Search orders, customers...',
@@ -187,7 +187,7 @@ const km: Dict = {
   'nav.menu': 'ម៉ឺនុយ',
   'nav.reports': 'របាយការណ៍',
   'nav.take': 'កម្មង់',
-  'nav.orders': 'កម្មង់',
+  'nav.orders': 'បញ្ញី',
 
   // Chrome / common
   'common.help': 'ជំនួយ',

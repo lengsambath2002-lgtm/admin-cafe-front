@@ -40,13 +40,13 @@ export default function KHQRModal({ payment, orderId, onClose, onPaid }: KHQRMod
   // expiry, unmount, or the first error (e.g. token not configured) — the manual
   // "Mark as Paid" button remains as a fallback.
   useEffect(() => {
-    if (paid || !payment.md5) return;
+    if (paid || !payment.md5 || !orderId) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       if (!active || Date.now() >= payment.expiresAt) return;
       try {
-        const res = await api.checkKhqr(payment.md5);
+        const res = await api.checkKhqr(orderId, payment.md5);
         if (active && res.paid) {
           setPaid(true);
           onPaid?.(orderId);

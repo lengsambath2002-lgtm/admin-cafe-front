@@ -58,7 +58,8 @@ export function generateOrderKHQR(
 
   const optionalData: Record<string, unknown> = {
     currency: currency === 'USD' ? khqrData.currency.usd : khqrData.currency.khr,
-    amount,
+    // Round to 2 decimals — KHQR rejects amounts like 4.31999999999.
+    amount: Math.round(amount * 100) / 100,
     storeLabel: MERCHANT.storeLabel,
     terminalLabel: MERCHANT.terminalLabel,
     expirationTimestamp: expiresAt,

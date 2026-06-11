@@ -83,12 +83,12 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
     <div className="space-y-8 animate-fade-in text-left">
       {/* Top Header Row of Reports */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        <div className="md:hidden">
           <h2 className="text-3xl font-bold text-primary tracking-tight">{t('rep.title')}</h2>
         </div>
 
         {/* Action controls row */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end md:ml-auto">
           <div className="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant/35 shrink-0">
             <button 
               onClick={() => setReportTab('weekly')}

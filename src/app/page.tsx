@@ -38,6 +38,8 @@ import TakeOrderView, { PlaceOrderPayload } from '../components/TakeOrderView';
 import OrderListView from '../components/OrderListView';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useT } from '../lib/i18n';
+import SimpleBar from 'simplebar-react';
+import 'simplebar-react/dist/simplebar.min.css';
 
 // Merge orders from several sources (regular + guest), de-duped by id, newest first.
 function mergeOrders(...results: PromiseSettledResult<Order[]>[]): Order[] {
@@ -108,6 +110,16 @@ export default function App() {
   // Guests are restricted to the Take Order page; admins manage everything.
   const isGuest = authUser?.role === 'guest';
   const { t } = useT();
+  // Title shown in the desktop top bar (the in-page title is hidden on desktop).
+  const pageTitle = ({
+    dashboard: t('dash.title'),
+    orders: t('to.title'),
+    'order-list': t('ol.title'),
+    products: t('prod.title'),
+    categories: t('cat.title'),
+    reports: t('rep.title'),
+    register_product: t('reg.registerProduct'),
+  } as Record<string, string>)[activeTab] ?? '';
 
   // Backend-backed reactive states (hydrated from the API on mount)
   const [categories, setCategories] = useState<Category[]>([]);
@@ -707,21 +719,25 @@ export default function App() {
 
         {/* Desktop top bar — language + help (admins). Guests use the floating cluster. */}
         {!isGuest && (
-          <div className="hidden md:flex items-center justify-end gap-2 px-6 lg:px-8 h-14 shrink-0 border-b border-outline-variant/30 bg-surface">
-            <LanguageSwitcher />
-            <button
-              onClick={() => setShowHelp(true)}
-              title={t('common.help')}
-              className="flex items-center gap-1.5 text-primary hover:bg-surface-container px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer"
-            >
-              <HelpCircle className="w-4 h-4" />
-              {t('common.help')}
-            </button>
+          <div className="hidden md:flex items-center justify-between gap-3 px-6 lg:px-8 h-14 shrink-0 border-b border-outline-variant/30 bg-surface">
+            <h1 className="text-xl font-bold text-primary tracking-tight truncate">{pageTitle}</h1>
+            <div className="flex items-center gap-2 shrink-0">
+              <LanguageSwitcher />
+              <button
+                onClick={() => setShowHelp(true)}
+                title={t('common.help')}
+                className="flex items-center gap-1.5 text-primary hover:bg-surface-container px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer"
+              >
+                <HelpCircle className="w-4 h-4" />
+                {t('common.help')}
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Scroll area — only the content scrolls; the top bar stays fixed */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
+        {/* Scroll area (SimpleBar) — only the content scrolls; the top bar stays fixed */}
+        <SimpleBar className="flex-1 min-h-0" style={{ maxHeight: '100%' }}>
+        <div className="p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -808,6 +824,7 @@ export default function App() {
           )}
         </div>
         </div>
+        </SimpleBar>
 
       </main>
 

@@ -99,10 +99,10 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
 
       {/* Quick Action Heading */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
+        <div className="md:hidden">
           <h2 className="text-3xl font-bold text-primary tracking-tight">{t('dash.title')}</h2>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 md:ml-auto">
           <button
             onClick={() => onNavigate('register_product')}
             className="flex items-center gap-2 border border-outline-variant/60 bg-surface-container-lowest text-primary hover:bg-surface-container-low px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-sm active:scale-95 cursor-pointer"

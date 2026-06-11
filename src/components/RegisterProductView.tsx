@@ -124,7 +124,7 @@ export default function RegisterProductView({ categories, onSubmitProduct, onCan
             {editingProduct ? t('reg.editDetails') : t('reg.registerProduct')}
           </span>
         </div>
-        <h2 className="text-3xl font-bold text-primary tracking-tight">
+        <h2 className="text-3xl font-bold text-primary tracking-tight md:hidden">
           {editingProduct ? t('reg.editProductDetails') : t('reg.registerProduct')}
         </h2>
       </div>

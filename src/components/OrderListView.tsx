@@ -87,10 +87,10 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Sticky header: title + filters stay pinned while the list scrolls below */}
-      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
+      <div className="sticky top-0 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
       {/* Page header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
+        <div className="md:hidden">
           <div className="flex items-center gap-3">
             <h2 className="text-3xl font-bold text-primary tracking-tight">{t('ol.title')}</h2>
             <span className="flex items-center gap-1.5 bg-surface-container text-on-surface-variant px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
@@ -100,7 +100,7 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end lg:ml-auto">
           {/* View toggle (card / table) */}
           <div className="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant/35 shrink-0">
             <button

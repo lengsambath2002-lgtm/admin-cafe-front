@@ -277,9 +277,9 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
       )}
 
       {/* Sticky header: title + category chips stay pinned while the menu scrolls */}
-      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 space-y-5">
-      {/* Page header — matches the Products catalog layout */}
-      <div>
+      <div className="sticky top-0 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 space-y-5">
+      {/* Page header (mobile only — desktop shows the title in the top bar) */}
+      <div className="md:hidden">
         <h2 className="text-3xl font-bold text-primary tracking-tight">{t('to.title')}</h2>
       </div>
 

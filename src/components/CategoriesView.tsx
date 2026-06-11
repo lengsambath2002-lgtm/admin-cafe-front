@@ -113,7 +113,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
     <div className="space-y-8 animate-fade-in relative pb-16">
       
       {/* Sticky header: title stays pinned while the grid scrolls below */}
-      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
+      <div className="md:hidden sticky top-0 z-20 bg-background -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4">
       {/* Category Heading Info */}
       <div className="flex justify-between items-end">
         <div>

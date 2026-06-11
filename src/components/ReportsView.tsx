@@ -85,7 +85,6 @@ export default function ReportsView({ transactions }: ReportsViewProps) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-primary tracking-tight">{t('rep.title')}</h2>
-          <p className="text-secondary text-base mt-1">Audit transactions logs, product allocations, and store revenue performance.</p>
         </div>
 
         {/* Action controls row */}

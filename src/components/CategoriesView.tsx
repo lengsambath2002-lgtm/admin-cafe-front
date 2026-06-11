@@ -118,7 +118,6 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-3xl font-bold text-primary tracking-tight">{t('cat.title')}</h2>
-          <p className="text-secondary text-base mt-2">{t('cat.subtitle')}</p>
         </div>
       </div>
       </div>
@@ -135,7 +134,7 @@ export default function CategoriesView({ categories, onAddCategory, onDeleteCate
               <img
                 src={cat.image}
                 alt={cat.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
                 referrerPolicy="no-referrer"
                 onError={onImageError}
               />

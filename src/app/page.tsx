@@ -500,8 +500,19 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Footer — log out */}
-        <div className="border-t border-outline-variant/20 pt-6 px-2.5">
+        {/* Footer — language + help + log out */}
+        <div className="border-t border-outline-variant/20 pt-4 px-2.5 space-y-1.5">
+          {!sidebarCollapsed && <LanguageSwitcher className="w-full justify-center mb-1" />}
+          <button
+            onClick={() => setShowHelp(true)}
+            title={sidebarCollapsed ? t('common.help') : undefined}
+            className={`w-full flex items-center py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all cursor-pointer ${
+              sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-4'
+            }`}
+          >
+            <HelpCircle className="w-4.5 h-4.5 shrink-0" />
+            {!sidebarCollapsed && <span>{t('common.help')}</span>}
+          </button>
           <button
             onClick={isGuest ? goToAdminLogin : handleLogout}
             title={sidebarCollapsed ? (isGuest ? 'Admin Login' : 'Log out') : undefined}
@@ -519,7 +530,7 @@ export default function App() {
       {/* Top-right controls: Help + Admin Login (guests). Guests have no header so
           they show on all sizes; admins use the mobile header on small screens to
           avoid overlapping it, so this floats on desktop only for them. */}
-      <div className={`fixed top-5 right-6 z-40 items-center gap-2 ${isGuest ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`fixed top-5 right-6 z-40 items-center gap-2 ${isGuest ? 'flex' : 'hidden'}`}>
         <LanguageSwitcher />
         {isGuest && (
           <button
@@ -703,7 +714,7 @@ export default function App() {
       })()}
 
       {/* Main Content Pane wrapper */}
-      <main className={`flex-1 min-h-0 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-8 flex flex-col justify-between transition-[margin] duration-300`}>
+      <main className={`flex-1 min-h-0 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-8 transition-[margin] duration-300`}>
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -719,7 +730,7 @@ export default function App() {
         )}
 
         {/* Active tab content segment */}
-        <div className="flex-1 w-full max-w-[1500px] mx-auto pb-12 sm:pb-4">
+        <div className="w-full max-w-[1500px] mx-auto pb-12 sm:pb-4">
           {activeTab === 'dashboard' && (
             <DashboardView
               orders={orders}

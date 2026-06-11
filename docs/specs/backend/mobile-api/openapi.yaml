@@ -1,0 +1,9 @@
+# mobile-api OpenAPI — keep in sync with D:/admin-cafe (/v3/api-docs).
+# Placeholder: export the live spec from the backend and paste/commit it here.
+openapi: 3.0.1
+info:
+  title: Brewmaster mobile-api
+  version: v1
+servers:
+  - url: https://admin-cafe-back-1.onrender.com
+paths: {}

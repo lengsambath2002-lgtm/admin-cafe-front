@@ -98,7 +98,6 @@ export default function OrderListView({ orders, onUpdateStatus, onCancel }: Read
               {activeCount} {t('ol.active')}
             </span>
           </div>
-          <p className="text-secondary text-base mt-1">{t('ol.subtitle')}</p>
         </div>
 
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">

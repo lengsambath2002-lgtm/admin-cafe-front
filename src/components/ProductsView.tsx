@@ -60,16 +60,15 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
       {/* Page heading */}
       <div>
         <h2 className="text-3xl font-bold text-primary tracking-tight">{t('prod.title')}</h2>
-        <p className="text-secondary text-base mt-1">{t('prod.subtitle')}</p>
       </div>
 
       {/* Filter and search controls row */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-        {/* Chips filters */}
-        <div className="flex gap-2.5 flex-wrap">
+        {/* Chips filters — horizontal scroll on small screens (no wrap) */}
+        <div className="flex gap-2.5 overflow-x-auto scrollbar-thin pb-1 -mb-1 w-full md:w-auto min-w-0">
           <button 
             onClick={() => setSelectedCategory('All')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+            className={`shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === 'All' ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
           >
             {t('common.all')}
           </button>
@@ -77,7 +76,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
             <button 
               key={cat.id}
               onClick={() => setSelectedCategory(cat.name)}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === cat.name ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
+              className={`shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${selectedCategory === cat.name ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm' : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'}`}
             >
               {cat.name}
             </button>
@@ -136,7 +135,7 @@ export default function ProductsView({ products, categories, onNavigate, onEditP
                   <img
                     src={product.imageUrl || product.image}
                     alt={product.name}
-                    className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out ${locked ? 'grayscale opacity-60' : ''}`}
+                    className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out ${locked ? 'grayscale opacity-60' : ''}`}
                     referrerPolicy="no-referrer"
                     onError={onImageError}
                   />

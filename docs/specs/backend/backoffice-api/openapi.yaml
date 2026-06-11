@@ -1,0 +1,7 @@
+openapi: 3.0.1
+info:
+  title: Brewmaster backoffice-api
+  version: v1
+servers:
+  - url: https://admin-cafe-back-1.onrender.com
+paths: {}

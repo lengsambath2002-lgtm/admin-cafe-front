@@ -101,7 +101,6 @@ export default function DashboardView({ orders, onNavigate, onSelectOrder }: Das
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-primary tracking-tight">{t('dash.title')}</h2>
-          <p className="text-secondary text-base mt-1">{t('dash.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button

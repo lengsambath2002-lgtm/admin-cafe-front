@@ -281,15 +281,14 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
       {/* Page header — matches the Products catalog layout */}
       <div>
         <h2 className="text-3xl font-bold text-primary tracking-tight">{t('to.title')}</h2>
-        <p className="text-secondary text-base mt-1">{t('to.subtitle')}</p>
       </div>
 
-      {/* Category chips — full width, above both columns */}
-      <div className="flex gap-2.5 flex-wrap">
+      {/* Category chips — horizontal scroll on small screens (no wrap) */}
+      <div className="flex gap-2.5 overflow-x-auto scrollbar-thin pb-1 -mb-1">
         <button
           type="button"
           onClick={() => setCategoryFilter('All')}
-          className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
+          className={`shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
             categoryFilter === 'All'
               ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
               : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
@@ -302,7 +301,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
             key={cat.id}
             type="button"
             onClick={() => setCategoryFilter(cat.id)}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-bold uppercase transition-all border cursor-pointer ${
               categoryFilter === cat.id
                 ? 'bg-tertiary text-on-tertiary border-tertiary shadow-sm'
                 : 'bg-surface-container-highest/20 hover:bg-outline-variant/15 text-on-surface-variant border-outline-variant/30'
@@ -345,7 +344,7 @@ export default function TakeOrderView({ products, categories, orders, showOrderH
                       <img
                         src={product.imageUrl || product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
                         referrerPolicy="no-referrer"
                         onError={onImageError}
                       />

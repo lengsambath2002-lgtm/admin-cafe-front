@@ -500,19 +500,8 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Footer — language + help + log out */}
-        <div className="border-t border-outline-variant/20 pt-4 px-2.5 space-y-1.5">
-          {!sidebarCollapsed && <LanguageSwitcher className="w-full justify-center mb-1" />}
-          <button
-            onClick={() => setShowHelp(true)}
-            title={sidebarCollapsed ? t('common.help') : undefined}
-            className={`w-full flex items-center py-2.5 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-all cursor-pointer ${
-              sidebarCollapsed ? 'justify-center px-0' : 'gap-3.5 px-4'
-            }`}
-          >
-            <HelpCircle className="w-4.5 h-4.5 shrink-0" />
-            {!sidebarCollapsed && <span>{t('common.help')}</span>}
-          </button>
+        {/* Footer — log out */}
+        <div className="border-t border-outline-variant/20 pt-6 px-2.5">
           <button
             onClick={isGuest ? goToAdminLogin : handleLogout}
             title={sidebarCollapsed ? (isGuest ? 'Admin Login' : 'Log out') : undefined}
@@ -714,7 +703,25 @@ export default function App() {
       })()}
 
       {/* Main Content Pane wrapper */}
-      <main className={`flex-1 min-h-0 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} p-4 sm:p-6 lg:p-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-8 transition-[margin] duration-300`}>
+      <main className={`flex-1 min-h-0 ${isGuest ? '' : (sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[280px]')} flex flex-col transition-[margin] duration-300`}>
+
+        {/* Desktop top bar — language + help (admins). Guests use the floating cluster. */}
+        {!isGuest && (
+          <div className="hidden md:flex items-center justify-end gap-2 px-6 lg:px-8 h-14 shrink-0 border-b border-outline-variant/30 bg-surface">
+            <LanguageSwitcher />
+            <button
+              onClick={() => setShowHelp(true)}
+              title={t('common.help')}
+              className="flex items-center gap-1.5 text-primary hover:bg-surface-container px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer"
+            >
+              <HelpCircle className="w-4 h-4" />
+              {t('common.help')}
+            </button>
+          </div>
+        )}
+
+        {/* Scroll area — only the content scrolls; the top bar stays fixed */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
 
         {/* Initial load / error feedback */}
         {loading && (
@@ -799,6 +806,7 @@ export default function App() {
               editingProduct={editingProduct}
             />
           )}
+        </div>
         </div>
 
       </main>
